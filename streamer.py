@@ -77,7 +77,13 @@ if __name__=='__main__':
     print get_trends(woe_ids.countries['Spain'])    
     
     # get 200 tweets for a tag    
-    tweets, __ = do_query('#p2', 100, 2)      
-    print len(tweets)
+    tweets, __ = do_query('#p2 OR #tcot', 100, 2)   
+    print 'Total tweets recovered:', len(tweets)
+    for t in [x['text'] for x in tweets]:
+        try:
+            print ' - ', t
+        except:
+            pass
+
 
 
