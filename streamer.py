@@ -5,6 +5,9 @@
 
 import twitter
 import woe_ids
+import datetime
+import json
+import time
 
 
 CONSUMER_KEY = '7WVJjUFxjG07hT1boGuS167gJ'
@@ -17,25 +20,26 @@ auth = twitter.oauth.OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET,
 
 twitter_api = twitter.Twitter(auth=auth)
 
+
+def get_trends(woe_id=1):
 # Returns the trends for an specific location. Returns the global trends by default
 # woe_id = the country id
 # API: https://dev.twitter.com/rest/reference/get/trends/place
 # Country ids: 
 #  https://developer.yahoo.com/geo/geoplanet/
 #  https://developer.yahoo.com/geo/geoplanet/guide/yql-tables.html#geo-countries
-def get_trends(woe_id=1):
     results = twitter_api.trends.place(_id=woe_id)[0]['trends']
     trends = [result['name'] for result in results]
     return trends
     
+
+def do_query(q, count = 100, total_iter = 1, since_id = -1):
 # total_iter = 0 to retrieve all the results
 # count = The number of tweets to return per page, up to a maximum of 100. 
 #        Defaults to 15. This was formerly the “rpp” parameter in the old 
 #        Search API
 # total_iter * count = total tweets to retrieve
-#https://dev.twitter.com/rest/reference/get/search/tweets
-def do_query(q, count = 100, total_iter = 1, since_id = -1):
-    
+#https://dev.twitter.com/rest/reference/get/search/tweets    
     if since_id == -1:
         results = twitter_api.search.tweets(q=q, count=count)
     else:
@@ -60,19 +64,51 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
         cont = True
         while cont:
             try:
-                 next_results = results['search_metadata']['next_results']
+                next_results = results['search_metadata']['next_results']
             except KeyError:
-                 cont = False
+                cont = False
+
              
             kwargs = dict([ kv.split('=') for kv in next_results[1:].split("&") ])
-            search_results = twitter_api.search.tweets(**kwargs)
-            statuses += search_results['statuses']   
-            last_id = search_results['search_metadata']['max_id']                 
+            try:
+                search_results = twitter_api.search.tweets(**kwargs)
+                statuses += search_results['statuses']   
+                last_id = search_results['search_metadata']['max_id']        
+            except: # max requests reached
+                cont = False
 
     return statuses, last_id
     
-
-if __name__=='__main__':       
+def monitorize_tweets(terms):
+# Continuously monitorizes a list of terms
+    query = terms[0]
+    for term in terms[1:]:
+        query += ' OR %s' % (term)
+    print ' - Monitorizing the terms:', query    
+    last_id = -1
+        
+    while(True):
+        print '    - Last id:', last_id
+        tweets, last_id = do_query(query, 100, -1, last_id)
+        save_tweets(tweets)
+        print '    - Sleeping for 15 mins'
+        time.sleep((15 * 60) + 1)
+        
+def save_tweets(tweets):
+# Saves tweets to a file, one tweet per line
+    month = datetime.datetime.now().month
+    day = datetime.datetime.now().day
+    hour = datetime.datetime.now().hour
+    minute = datetime.datetime.now().minute
+    file_name = './corpus/tweets-%s-%s-%s-%s.txt' % (month, day, hour, minute)
+    print '    - Saving file:', file_name
+    with open(file_name, 'w') as f:
+        for tweet in tweets:
+            f.write(json.dumps(tweet) + '\n')
+            
+if __name__=='__main__':     
+    print 'STARTING...'
+    
     # get the trends for spain     
     print get_trends(woe_ids.countries['Spain'])    
     
@@ -84,6 +120,11 @@ if __name__=='__main__':
             print ' - ', t
         except:
             pass
+
+    # monitorize tweets, this continues for ever
+    monitorize_tweets(['#p2', '#tcot'])
+    
+    print 'DONE'
 
 
 
