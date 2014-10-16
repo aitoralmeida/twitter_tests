@@ -89,7 +89,7 @@ def monitorize_tweets(terms):
         
     while(True):
         print '    - Last id:', last_id
-        tweets, last_id = do_query(query, 100, -1, last_id)
+        tweets, last_id = do_query(query, 100, 0, last_id)
         save_tweets(tweets)
         print '    - Sleeping for 15 mins'
         time.sleep((15 * 60) + 1)
