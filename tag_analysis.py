@@ -107,6 +107,26 @@ def count_side_tags():
                             
     return tag_count
     
+def calculate_political_valence(tag_count):
+# Uses the formula in "Political Polarization on Twitter"
+# Calculates the political valence of each tag depending on its use by each side.
+# Takes values between 1 (democrat) and -1 (republican)
+    total_democrat = 0
+    total_republican= 0
+    political_valence = {} # {'tag' : 0.45}
+    
+    for t in tag_count:
+        total_democrat += tag_count[t]['democrat']
+        total_republican += tag_count[t]['republican']
+               
+    for t in tag_count:
+        tag_democrat = tag_count[t]['democrat'] * 1.0
+        tag_republican = tag_count[t]['republican'] * 1.0
+        
+        political_valence[t] = 2.0 * ( (tag_democrat/total_democrat)/((tag_republican/total_republican) + (tag_democrat/total_democrat)) ) - 1
+        
+    return political_valence
+    
 if __name__=='__main__':  
     print 'Starting...'
     
