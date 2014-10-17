@@ -127,10 +127,58 @@ def calculate_political_valence(tag_count):
         
     return political_valence
     
+def calculate_user_valence_by_tag(tags_valence):
+# Calculates the political valence of an account based on the tags that it uses.
+# Takes values between 1 (democrat) and -1 (republican)
+    users_valence = {}
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')):
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
+        with open(file_name, 'r') as f:
+            for line in f:
+                try:
+                    tweet = json.loads(line)
+                except:
+                    continue
+            
+                try:
+                    user_id = tweet['user']['id']
+                    tags = [x['text'] for x in tweet['entities']['hashtags']]
+                except:
+                    continue
+
+
+                if len(tags) > 0:
+                    temp_valence = 0
+                    political_tags = 0
+                    
+                    for tag in tags:
+                        if tags_valence.has_key(tag):
+                            temp_valence += tags_valence[tag]
+                            political_tags += 1
+                    
+                    if political_tags > 0: # valence is only calculated if the tweet has any politically relevant tag                   
+                        temp_valence = temp_valence * 1.0 / political_tags    
+    
+                        if users_valence.has_key(user_id):
+                            users_valence[user_id] = (users_valence[user_id] + temp_valence) / 2.0
+                        else:
+                            users_valence[user_id] = temp_valence
+                    
+    return users_valence
+    
 if __name__=='__main__':  
     print 'Starting...'
     
     # identify the related tags
     results = select_related_tags_jaccard(['p2','tcot'])
     print results
+    
+    # calculate tags political valence
+    tag_count = count_side_tags()
+    political_valence = calculate_political_valence(tag_count)
+    print political_valence
+    # calculate account valences
+    user_valences = calculate_user_valence_by_tag(political_valence)
+    print user_valences
+    
     print 'DONE'
