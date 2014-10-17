@@ -73,7 +73,7 @@ def select_related_tags_jaccard(seed_tags):
     
     return results
     
-def count_side_tags():
+def _count_side_tags():
 # Count how many times each relevant tag has been used by each side. It will
 # be used to calculate the political valence of the tags. 
     tag_count = {} # {'tag' : {'democrat' : 2, 'republican': 10}}
@@ -174,7 +174,7 @@ if __name__=='__main__':
     print results
     
     # calculate tags political valence
-    tag_count = count_side_tags()
+    tag_count = _count_side_tags()
     political_valence = calculate_political_valence(tag_count)
     print political_valence
     # calculate account valences

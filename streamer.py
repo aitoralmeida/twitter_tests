@@ -90,11 +90,11 @@ def monitorize_tweets(terms):
     while(True):
         print '    - Last id:', last_id
         tweets, last_id = do_query(query, 100, 0, last_id)
-        save_tweets(tweets)
+        _save_tweets(tweets)
         print '    - Sleeping for 15 mins'
         time.sleep((15 * 60) + 1)
         
-def save_tweets(tweets):
+def _save_tweets(tweets):
 # Saves tweets to a file, one tweet per line
     month = datetime.datetime.now().month
     day = datetime.datetime.now().day
