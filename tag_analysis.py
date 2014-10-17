@@ -9,16 +9,19 @@ import json
 
 CORPUS = 'corpus' #corpus, corpus_lite
 
+republican = [] #list of republican account ids
+democrat = [] #list of democrat account ids
+
 def select_related_tags_jaccard(seed_tags):
-    # To identify which hastags are related with some event we are going to use some hastags 
-    # as seeds to study the co-ocurrence. To do this we are going to analyze which
-    # hashtags co-occur in at least one tweet and we are going to ranked them using 
-    # the Jaccard Coefficient. The similarity threshold used in other papers is 0.005
-  
-    # Coef = |S disjuction T| / |S union T|   => 
-    # Coef = Number of tweets with a seed and the hashtag / number of tweets with a seed + number of tweets with the hashtag
-    # Where S is the tweets that the tag appears with some of the seeds and
-    # T is the number of tweets that appears without them
+# To identify which hastags are related with some event we are going to use some hastags 
+# as seeds to study the co-ocurrence. To do this we are going to analyze which
+# hashtags co-occur in at least one tweet and we are going to ranked them using 
+# the Jaccard Coefficient. The similarity threshold used in other papers is 0.005
+#
+# Coef = |S disjuction T| / |S union T|   => 
+# Coef = Number of tweets with a seed and the hashtag / number of tweets with a seed + number of tweets with the hashtag
+# Where S is the tweets that the tag appears with some of the seeds and
+# T is the number of tweets that appears without them
     
     tag_count = {} # {'tag' : {'with_seed' : 2, 'tag': 10}}
     total_tweets_seed = 0.0
@@ -70,8 +73,44 @@ def select_related_tags_jaccard(seed_tags):
     
     return results
     
+def count_side_tags():
+# Count how many times each relevant tag has been used by each side. It will
+# be used to calculate the political valence of the tags. 
+    tag_count = {} # {'tag' : {'democrat' : 2, 'republican': 10}}
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')): 
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
+        with open(file_name, 'r') as f:
+            for line in f:
+                try:
+                    tweet = json.loads(line)
+                except:
+                    continue
+            
+                try:
+                    user_id = tweet['user']['id']
+                    tags = [x['text'] for x in tweet['entities']['hashtags']]
+                except:
+                    continue
+                
+                if user_id in democrat:
+                    for t in tags:
+                        if tag_count.has_key(t):
+                            tag_count[t]['democrat'] += 1
+                        else:
+                            tag_count[t] = {'democrat' : 1, 'republican' : 0}
+                elif user_id in republican:
+                    for t in tags:
+                        if tag_count.has_key(t):
+                            tag_count[t]['republican'] += 1
+                        else:
+                            tag_count[t] = {'democrat' : 0, 'republican' : 1}
+                            
+    return tag_count
+    
 if __name__=='__main__':  
     print 'Starting...'
+    
+    # identify the related tags
     results = select_related_tags_jaccard(['p2','tcot'])
     print results
     print 'DONE'
