@@ -1,5 +1,1 @@
-calculated.json  
-genders_genderize.json  
-genders_genderize_new.json  
-user_names_by_name.json  
-user_names.json
+*.json
