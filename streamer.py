@@ -48,7 +48,7 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
     statuses = results['statuses']
     last_id = results['search_metadata']['max_id']
     
-    if total_iter > 1:
+    if total_iter >= 1:
         for i in range(total_iter-1):
             #taken from http://nbviewer.ipython.org/github/ptwobrussell/Mining-the-Social-Web-2nd-Edition/blob/master/ipynb/Chapter%201%20-%20Mining%20Twitter.ipynb
             try:
