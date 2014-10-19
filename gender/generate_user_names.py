@@ -13,8 +13,12 @@ USER_NAMES = 'user_names.json'
 if os.path.exists(USER_NAMES):
     user_names = json.load(open(USER_NAMES))
 else:
-    user_names = []
-user_names = set(user_names)
+    user_names = {
+         # user_name : {
+         #     'ids' : [ 123131, 2131231],
+         #     'tweets' : 345
+         # }
+    }
 
 FILES_PROCESSED = 'files_processed.json'
 if os.path.exists(FILES_PROCESSED):
@@ -39,11 +43,17 @@ for fname in files:
                 continue
 
             user_name = contents['user']['name']
-            user_names.add(user_name)
+            user_id = contents['user']['id']
+            if user_name not in user_names:
+                user_names[user_name] = { 'tweets' : 0, 'ids' : [] }
+            
+            if user_id not in user_names[user_name]['ids']:
+                user_names[user_name]['ids'].append(user_id)
+            user_names[user_name]['tweets'] = 1
 
     print "done. %s new names" % (len(user_names) - original)
     user_names_json = open("user_names.json", "w")
-    json.dump(list(user_names), user_names_json, indent = 4)
+    json.dump(user_names, user_names_json, indent = 4)
 
     files_processed.append(fname)
     json.dump(files_processed, open(FILES_PROCESSED, 'w'), indent = 4)
