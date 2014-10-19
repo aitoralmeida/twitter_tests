@@ -96,10 +96,11 @@ def monitorize_tweets(terms):
         
 def _save_tweets(tweets):
 # Saves tweets to a file, one tweet per line
-    month = datetime.datetime.now().month
-    day = datetime.datetime.now().day
-    hour = datetime.datetime.now().hour
-    minute = datetime.datetime.now().minute
+    now = datetime.datetime.now()
+    month = now.month
+    day = now.day
+    hour = now.hour
+    minute = now.minute
     file_name = './corpus/tweets-%s-%s-%s-%s.txt' % (month, day, hour, minute)
     print '    - Saving file:', file_name
     with open(file_name, 'w') as f:
