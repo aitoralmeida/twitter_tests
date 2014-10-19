@@ -3,6 +3,7 @@
 @author: aitor
 """
 
+import gzip
 import twitter
 import woe_ids
 import datetime
@@ -97,9 +98,9 @@ def _save_tweets(tweets):
     day = now.day
     hour = now.hour
     minute = now.minute
-    file_name = './corpus/tweets-%s-%s-%s-%s.txt' % (month, day, hour, minute)
+    file_name = './corpus/tweets-%s-%s-%s-%s.txt.gz' % (month, day, hour, minute)
     print '    - Saving file:', file_name
-    with open(file_name, 'w') as f:
+    with gzip.open(file_name, 'w') as f:
         for tweet in tweets:
             f.write(json.dumps(tweet) + '\n')
             
