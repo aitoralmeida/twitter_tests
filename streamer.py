@@ -81,13 +81,11 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
     
 def monitorize_tweets(terms):
 # Continuously monitorizes a list of terms
-    query = terms[0]
-    for term in terms[1:]:
-        query += ' OR %s' % (term)
+    query = ' OR '.join(terms)
     print ' - Monitorizing the terms:', query    
     last_id = -1
         
-    while(True):
+    while True:
         print '    - Last id:', last_id
         tweets, last_id = do_query(query, 100, 0, last_id)
         _save_tweets(tweets)
