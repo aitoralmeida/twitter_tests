@@ -61,21 +61,19 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
             statuses += search_results['statuses']
             last_id = search_results['search_metadata']['max_id']
     elif total_iter == 0:
-        cont = True
-        while cont:
+        while True:
             try:
                 next_results = results['search_metadata']['next_results']
             except KeyError:
-                cont = False
+                break
 
-             
             kwargs = dict([ kv.split('=') for kv in next_results[1:].split("&") ])
             try:
                 search_results = twitter_api.search.tweets(**kwargs)
                 statuses += search_results['statuses']   
                 last_id = search_results['search_metadata']['max_id']        
             except: # max requests reached
-                cont = False
+                break
 
     return statuses, last_id
     
