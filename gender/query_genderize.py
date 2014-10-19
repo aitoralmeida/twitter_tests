@@ -1,4 +1,5 @@
 import os
+import sys
 import genderize
 import json
 
@@ -14,8 +15,18 @@ else:
         # }
     }
 
-existing_genders = json.load(open("genders_genderize.json"))
-usernames = json.load(open("user_names_by_name.json"))
+if os.path.exists('genders_genderize.json'):
+    existing_genders = json.load(open("genders_genderize.json"))
+else:
+    print >> sys.stderr, "%s not found. Starting from scratch." % 'genders_genderize.json'
+    existing_genders = {}
+
+USER_NAMES_BY_NAME = 'user_names_by_name.json'
+if os.path.exists(USER_NAMES_BY_NAME):
+    usernames = json.load(open(USER_NAMES_BY_NAME))
+else:
+    print >> sys.stderr, "%s not found." % USER_NAMES_BY_NAME
+    sys.exit(-1)
 
 names_and_frequency = [ 
     # (name, number)
