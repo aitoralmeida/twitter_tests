@@ -1,5 +1,6 @@
 # -*-*- encoding: utf8 -*-*-
 import os
+import sys
 import re
 import time
 import json
@@ -17,12 +18,20 @@ MANY_USERS_MAX = 10
 MANY_USERS_MIN = 3
 MINIMUM_NAME_LENGTH = 4
 
-old_genders_genderize = json.load(open(GENDERS_GENDERIZE))
+if os.path.exists(GENDERS_GENDERIZE):
+    old_genders_genderize = json.load(open(GENDERS_GENDERIZE))
+else:
+    print >> sys.stderr, "%s not found" % GENDERS_GENDERIZE
+    old_genders_genderize = {}
 genders_genderize = {}
 for key in old_genders_genderize:
     genders_genderize[key.lower()] = old_genders_genderize[key]
 
-new_genders_genderize = json.load(open(NEW_GENDERIZE))
+if os.path.exists(NEW_GENDERIZE):
+    new_genders_genderize = json.load(open(NEW_GENDERIZE))
+else:
+    print >> sys.stderr, "%s not found" % NEW_GENDERIZE
+    new_genders_genderize = {}
 
 if USE_CACHE and os.path.exists(USER_NAMES_BY_NAME):  
     print "Loading %s. Delete to re-create." % USER_NAMES_BY_NAME
