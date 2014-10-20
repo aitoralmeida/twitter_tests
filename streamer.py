@@ -48,6 +48,8 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
        
     statuses = results['statuses']
     last_id = results['search_metadata']['max_id']
+    now = datetime.datetime.now()
+    print '     - First query, total tweets(%s-%s %s:%s:%s): %s' % (now.month, now.day, now.hour, now.minute, now.second, len(statuses))
     
     if total_iter >= 1:
         for i in range(total_iter-1):
@@ -55,6 +57,8 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
             try:
                  next_results = results['search_metadata']['next_results']
             except KeyError:
+                 now = datetime.datetime.now()
+                 print '     - ERROR(%s-%s %s:%s:%s): key error' % (now.month, now.day, now.hour, now.minute, now.second)                 
                  break
              
             kwargs = dict([ kv.split('=') for kv in next_results[1:].split("&") ])
@@ -66,14 +70,24 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
             try:
                 next_results = results['search_metadata']['next_results']
             except KeyError:
+                now = datetime.datetime.now()
+                print '     - ERROR(%s-%s %s:%s:%s): key error' % (now.month, now.day, now.hour, now.minute, now.second)
                 break
 
             kwargs = dict([ kv.split('=') for kv in next_results[1:].split("&") ])
+            now = datetime.datetime.now()
+            print '     - kwargs(%s-%s %s:%s:%s): %s'  % (now.month, now.day, now.hour, now.minute, now.second, kwargs)                
             try:
                 results = twitter_api.search.tweets(**kwargs)
-                statuses += results['statuses']   
+                statuses += results['statuses']
+                now = datetime.datetime.now()
+                print '     - Total tweets(%s-%s %s:%s:%s): %s' % (now.month, now.day, now.hour, now.minute, now.second, len(statuses))
                 last_id = results['search_metadata']['max_id']        
             except: # max requests reached
+                now = datetime.datetime.now()
+                print '     - ERROR(%s-%s %s:%s:%s): Max requests'  % (now.month, now.day, now.hour, now.minute, now.second)
+                print '   - Sleeping for 15 mins'
+                time.sleep((15 * 60) + 1)                
                 break
 
     return statuses, last_id
@@ -85,11 +99,11 @@ def monitorize_tweets(terms):
     last_id = -1
         
     while True:
-        print '    - Last id:', last_id
+        print '   - Last id:', last_id
         tweets, last_id = do_query(query, 100, 0, last_id)
         _save_tweets(tweets)
-        print '    - Sleeping for 15 mins'
-        time.sleep((15 * 60) + 1)
+        print '   - Sleeping for 10 secs'
+        time.sleep(10)
         
 def _save_tweets(tweets):
 # Saves tweets to a file, one tweet per line
@@ -98,7 +112,8 @@ def _save_tweets(tweets):
     day = now.day
     hour = now.hour
     minute = now.minute
-    file_name = './corpus/tweets-%s-%s-%s-%s.txt.gz' % (month, day, hour, minute)
+    second = now.second
+    file_name = './corpus/tweets-%s-%s-%s-%s-%s.txt.gz' % (month, day, hour, minute, second)
     print '    - Saving file:', file_name
     with gzip.open(file_name, 'w') as f:
         for tweet in tweets:
@@ -107,17 +122,17 @@ def _save_tweets(tweets):
 if __name__=='__main__':     
     print 'STARTING...'
     
-    # get the trends for spain     
-    print get_trends(woe_ids.countries['Spain'])    
-    
-    # get 200 tweets for a tag    
-    tweets, __ = do_query('#p2 OR #tcot', 100, 2)   
-    print 'Total tweets recovered:', len(tweets)
-    for t in [x['text'] for x in tweets]:
-        try:
-            print ' - ', t
-        except:
-            pass
+#    # get the trends for spain     
+#    print get_trends(woe_ids.countries['Spain'])    
+#    
+#    # get 200 tweets for a tag    
+#    tweets, __ = do_query('#p2 OR #tcot', 100, 2)   
+#    print 'Total tweets recovered:', len(tweets)
+#    for t in [x['text'] for x in tweets]:
+#        try:
+#            print ' - ', t
+#        except:
+#            pass
 
     # monitorize tweets, this continues for ever
     monitorize_tweets(['#p2', '#tcot'])
