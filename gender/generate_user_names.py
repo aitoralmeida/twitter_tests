@@ -49,7 +49,8 @@ for fname in files:
             
             if user_id not in user_names[user_name]['ids']:
                 user_names[user_name]['ids'].append(user_id)
-            user_names[user_name]['tweets'] = 1
+
+            user_names[user_name]['tweets'] += 1
 
     print "done. %s new names" % (len(user_names) - original)
     user_names_json = open("user_names.json", "w")
