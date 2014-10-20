@@ -3,6 +3,7 @@
 @author: aitor
 """
 
+import gzip
 import twitter
 import woe_ids
 import datetime
@@ -48,7 +49,7 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
     statuses = results['statuses']
     last_id = results['search_metadata']['max_id']
     
-    if total_iter > 1:
+    if total_iter >= 1:
         for i in range(total_iter-1):
             #taken from http://nbviewer.ipython.org/github/ptwobrussell/Mining-the-Social-Web-2nd-Edition/blob/master/ipynb/Chapter%201%20-%20Mining%20Twitter.ipynb
             try:
@@ -61,33 +62,29 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
             statuses += search_results['statuses']
             last_id = search_results['search_metadata']['max_id']
     elif total_iter == 0:
-        cont = True
-        while cont:
+        while True:
             try:
                 next_results = results['search_metadata']['next_results']
             except KeyError:
-                cont = False
+                break
 
-             
             kwargs = dict([ kv.split('=') for kv in next_results[1:].split("&") ])
             try:
-                search_results = twitter_api.search.tweets(**kwargs)
-                statuses += search_results['statuses']   
-                last_id = search_results['search_metadata']['max_id']        
+                results = twitter_api.search.tweets(**kwargs)
+                statuses += results['statuses']   
+                last_id = results['search_metadata']['max_id']        
             except: # max requests reached
-                cont = False
+                break
 
     return statuses, last_id
     
 def monitorize_tweets(terms):
 # Continuously monitorizes a list of terms
-    query = terms[0]
-    for term in terms[1:]:
-        query += ' OR %s' % (term)
+    query = ' OR '.join(terms)
     print ' - Monitorizing the terms:', query    
     last_id = -1
         
-    while(True):
+    while True:
         print '    - Last id:', last_id
         tweets, last_id = do_query(query, 100, 0, last_id)
         _save_tweets(tweets)
@@ -96,13 +93,14 @@ def monitorize_tweets(terms):
         
 def _save_tweets(tweets):
 # Saves tweets to a file, one tweet per line
-    month = datetime.datetime.now().month
-    day = datetime.datetime.now().day
-    hour = datetime.datetime.now().hour
-    minute = datetime.datetime.now().minute
-    file_name = './corpus/tweets-%s-%s-%s-%s.txt' % (month, day, hour, minute)
+    now = datetime.datetime.now()
+    month = now.month
+    day = now.day
+    hour = now.hour
+    minute = now.minute
+    file_name = './corpus/tweets-%s-%s-%s-%s.txt.gz' % (month, day, hour, minute)
     print '    - Saving file:', file_name
-    with open(file_name, 'w') as f:
+    with gzip.open(file_name, 'w') as f:
         for tweet in tweets:
             f.write(json.dumps(tweet) + '\n')
             
