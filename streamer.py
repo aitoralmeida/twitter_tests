@@ -58,9 +58,9 @@ def do_query(q, count = 100, total_iter = 1, since_id = -1):
                  break
              
             kwargs = dict([ kv.split('=') for kv in next_results[1:].split("&") ])
-            search_results = twitter_api.search.tweets(**kwargs)
-            statuses += search_results['statuses']
-            last_id = search_results['search_metadata']['max_id']
+            results = twitter_api.search.tweets(**kwargs)
+            statuses += results['statuses']
+            last_id = results['search_metadata']['max_id']
     elif total_iter == 0:
         while True:
             try:
