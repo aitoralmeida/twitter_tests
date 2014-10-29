@@ -6,6 +6,7 @@
 import json
 from glob import glob
 import networkx as nx
+import gzip
 
 CORPUS = 'corpus' #corpus, corpus_lite
 
@@ -14,15 +15,15 @@ def build_networks(process_retweets = True):
     G_tot = nx.DiGraph()
     G_retweet = nx.DiGraph()
     G_mentions = nx.DiGraph()
-    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
         G_tot, G_retweet, G_mentions = _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets)
     
     return G_tot, G_retweet, G_mentions
 
 def _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets = True):
 # Process each file
-     with open(file_name, 'r') as f:
+     with gzip.open(file_name, 'r') as f:
         for line in f:
             try:
                 tweet = json.loads(line)
@@ -43,10 +44,14 @@ def _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets = Tr
                 continue
             
             try:
-                mentions = [[mention['id_str'],  mention['screen_name']] for mention in tweet['entities']['user_mentions']] 
-                for m_id in mentions:                    
-                    G_tot = _add_edge(G_mentions, user_id, user_name, m_id[0], m_id[1])       
-                    G_mentions = _add_edge(G_mentions, user_id, user_name, m_id[0], m_id[1])    
+                if not tweet.has_key('retweeted_status'): 
+                    # Retweet mentions are not taken into account, as in 
+                    # Meassuring user influence in twitter:the Million followers 
+                    # fallacy
+                    mentions = [[mention['id_str'],  mention['screen_name']] for mention in tweet['entities']['user_mentions']] 
+                    for m_id in mentions:                    
+                        G_tot = _add_edge(G_tot, user_id, user_name, m_id[0], m_id[1])       
+                        G_mentions = _add_edge(G_mentions, user_id, user_name, m_id[0], m_id[1])    
             except:
                 pass
             
@@ -54,7 +59,7 @@ def _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets = Tr
                 if tweet.has_key('retweeted_status'):     
                     retweeted_id = tweet['retweeted_status']['user']['id_str']
                     retweeted_label = tweet['retweeted_status']['user']['screen_name']
-                    G_tot = _add_edge(G_retweet, user_id, user_name, retweeted_id, retweeted_label)  
+                    G_tot = _add_edge(G_tot, user_id, user_name, retweeted_id, retweeted_label)  
                     G_retweet = _add_edge(G_retweet, user_id, user_name, retweeted_id, retweeted_label)  
             except:
                 print 'fail'
@@ -151,7 +156,7 @@ def clean_non_positioned(path):
     
 if __name__=='__main__':     
     print 'Building networks...'
-    G_tot, G_retweet, G_mentions = build_networks(False)
+    G_tot, G_retweet, G_mentions = build_networks()
     print 'Writing files...'
     nx.write_gexf(G_tot, open('./networks/total.gexf','w'))
     nx.write_gexf(G_retweet, open('./networks/retweets.gexf','w'))
