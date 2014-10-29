@@ -6,6 +6,7 @@ Created on Fri Oct 17 11:07:36 2014
 """
 from glob import glob
 import json
+import gzip
 
 CORPUS = 'corpus' #corpus, corpus_lite
 
@@ -13,9 +14,9 @@ def total_users():
     users = set()
     total_retweets = 0
     total_tweets = 0
-    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
-        with open(file_name, 'r') as f:
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        with gzip.open(file_name, 'r') as f:
             for line in f:
                 try:
                     tweet = json.loads(line)

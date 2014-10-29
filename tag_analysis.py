@@ -6,6 +6,7 @@ Created on Fri Oct 17 09:08:11 2014
 """
 from glob import glob
 import json
+import gzip
 
 CORPUS = 'corpus' #corpus, corpus_lite
 
@@ -26,9 +27,9 @@ def select_related_tags_jaccard(seed_tags):
     tag_count = {} # {'tag' : {'with_seed' : 2, 'tag': 10}}
     total_tweets_seed = 0.0
     
-    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
-        with open(file_name, 'r') as f:
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        with gzip.open(file_name, 'r') as f:
             for line in f:
                 try:
                     tweet = json.loads(line)
@@ -67,7 +68,10 @@ def select_related_tags_jaccard(seed_tags):
         tweets_tag_total = tag_count[tag]['tag'] * 1.0
         jaccard_coef = tweets_with_seed_coocurrence / (total_tweets_seed + tweets_tag_total)
         if tweets_with_seed_coocurrence > 0:
-            print '  - ', tag, tweets_with_seed_coocurrence, jaccard_coef
+            try:
+                print '  - ', tag, tweets_with_seed_coocurrence, jaccard_coef
+            except:
+                pass
         if jaccard_coef > 0.005:
             results.append(tag)        
     
@@ -77,9 +81,9 @@ def _count_side_tags():
 # Count how many times each relevant tag has been used by each side. It will
 # be used to calculate the political valence of the tags. 
     tag_count = {} # {'tag' : {'democrat' : 2, 'republican': 10}}
-    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')): 
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
-        with open(file_name, 'r') as f:
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')): 
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        with gzip.open(file_name, 'r') as f:
             for line in f:
                 try:
                     tweet = json.loads(line)
@@ -131,9 +135,9 @@ def calculate_user_valence_by_tag(tags_valence):
 # Calculates the political valence of an account based on the tags that it uses.
 # Takes values between 1 (democrat) and -1 (republican)
     users_valence = {}
-    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt')))
-        with open(file_name, 'r') as f:
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
+        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        with gzip.open(file_name, 'r') as f:
             for line in f:
                 try:
                     tweet = json.loads(line)

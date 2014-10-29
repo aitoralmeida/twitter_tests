@@ -17,7 +17,6 @@ CONSUMER_SECRET ='faY2XRyV4zUO1ScI38T6PsXcVLutOzFgMcAi0VOabgvkq2fXtl'
 OAUTH_TOKEN = '2833997469-weiExfPXQ3Mscii21BD5kZHb1srghWzuuLaYLHa'
 OAUTH_TOKEN_SECRET = 'B4KYovQBMjnziTeSi1FrkYFOqeKsr4cm76aIrjoknXZUn'
 
-total = 0
 tweets = []
 initial_time = time.time()
 
@@ -25,7 +24,7 @@ initial_time = time.time()
 class StdOutListener(StreamListener):       
  
     def on_status(self, status):
-        global total, tweets, initial_time
+        global tweets, initial_time
         
         elapsed_time = time.time () - initial_time #elapsed secons
         #save the status every 30 mins
