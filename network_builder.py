@@ -62,8 +62,10 @@ def _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets = Tr
                     G_tot = _add_edge(G_tot, user_id, user_name, retweeted_id, retweeted_label)  
                     G_retweet = _add_edge(G_retweet, user_id, user_name, retweeted_id, retweeted_label)  
             except:
-                print 'fail'
                 pass
+            
+            if tweet['in_reply_to_user_id'] and tweet['in_reply_to_screen_name']:   
+                G_tot = _add_edge(G_tot, user_id, user_name, tweet['in_reply_to_user_id'], tweet['in_reply_to_screen_name']) 
             
             
      return G_tot, G_retweet, G_mentions
