@@ -12,6 +12,8 @@ CORPUS = 'corpus' #corpus, corpus_lite
 
 republican = [] #list of republican account ids
 democrat = [] #list of democrat account ids
+SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
+MIN_JACCARD = 0.005
 
 def select_related_tags_jaccard(seed_tags):
 # To identify which hastags are related with some event we are going to use some hastags 
@@ -72,7 +74,7 @@ def select_related_tags_jaccard(seed_tags):
                 print '  - ', tag, tweets_with_seed_coocurrence, jaccard_coef
             except:
                 pass
-        if jaccard_coef > 0.005:
+        if jaccard_coef > MIN_JACCARD:
             results.append(tag)        
     
     return results
@@ -174,15 +176,15 @@ if __name__=='__main__':
     print 'Starting...'
     
     # identify the related tags
-    results = select_related_tags_jaccard(['p2','tcot'])
+    results = select_related_tags_jaccard(SEED)
     print results
     
-    # calculate tags political valence
-    tag_count = _count_side_tags()
-    political_valence = calculate_political_valence(tag_count)
-    print political_valence
-    # calculate account valences
-    user_valences = calculate_user_valence_by_tag(political_valence)
-    print user_valences
+#    # calculate tags political valence
+#    tag_count = _count_side_tags()
+#    political_valence = calculate_political_valence(tag_count)
+#    print political_valence
+#    # calculate account valences
+#    user_valences = calculate_user_valence_by_tag(political_valence)
+#    print user_valences
     
     print 'DONE'
