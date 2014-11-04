@@ -38,14 +38,14 @@ def count_meme_appearance():
                     tags = [x['text'] for x in tweet['entities']['hashtags']]
                     for tag in tags:
                         if not tag in SEED:                                             
-                            _add_meme(meme_days, tag, month, day)                    
+                            _add_meme(meme_days, tag, month, day, user_id)                    
                 except:
                     pass
                 
                 try:
                     urls = [m['expanded_url'] for m in tweet['entities']['urls']]
                     for url in urls:
-                        _add_meme(meme_days, url, month, day)   
+                        _add_meme(meme_days, url, month, day, user_id)   
                 except:
                     pass
                 
@@ -53,15 +53,24 @@ def count_meme_appearance():
                         
     json.dump(meme_days, open('meme_count.json', 'w'), indent=2)
     
-def _add_meme(meme_days, meme, month, day):
+def _add_meme(meme_days, meme, month, day, user_id):
     if not meme_days.has_key(meme):
-        meme_days[meme] = {month : {day : 1}}
+        meme_days[meme] = {month : {day : {'total' : 1, user_id : 1}}}
     elif not meme_days[meme].has_key(month):
-        meme_days[meme][month] = {day : 1}
-    elif not meme_days[meme][month].has_key(day):
-        meme_days[meme][month][day] = 1
-    else:
-        meme_days[meme][month][day] += 1
+        meme_days[meme][month] = {day : {'total' : 1, user_id : 1}}
+    elif not meme_days[meme][month].has_key(day):          
+        meme_days[meme][month][day] = {'total' : 1, user_id : 1}
+    elif not meme_days[meme][month][day].has_key(user_id):
+        try:
+            total = meme_days[meme][month][day]['total']
+            total += 1
+        except:
+            total = 1  
+        meme_days[meme][month][day]['total'] = total
+        meme_days[meme][month][day][day][user_id] = 1
+    else:  
+        meme_days[meme][month][day]['total'] += 1
+        meme_days[meme][month][day][user_id] += 1
     
 if __name__=='__main__':  
     print 'Starting...'
