@@ -53,7 +53,7 @@ def count_meme_appearance():
                         
     json.dump(meme_days, open('meme_count.json', 'w'), indent=2)
     
-def _add_meme(meme_days, meme, month, day, user_id):
+def _add_meme(meme_days, meme, month, day, user_id):       
     if not meme_days.has_key(meme):
         meme_days[meme] = {month : {day : {'total' : 1, user_id : 1}}}
     elif not meme_days[meme].has_key(month):
@@ -67,10 +67,12 @@ def _add_meme(meme_days, meme, month, day, user_id):
         except:
             total = 1  
         meme_days[meme][month][day]['total'] = total
-        meme_days[meme][month][day][day][user_id] = 1
+        meme_days[meme][month][day][user_id] = 1
+
     else:  
         meme_days[meme][month][day]['total'] += 1
         meme_days[meme][month][day][user_id] += 1
+
     
 if __name__=='__main__':  
     print 'Starting...'
