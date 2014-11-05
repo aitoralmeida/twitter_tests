@@ -57,27 +57,33 @@ def count_meme_id_diversity():
     meme_count = json.load(open('meme_count.json', 'r'))
     meme_diversity = {}
     for i, meme in enumerate(meme_count):     
-        if i % 100 == 0:
-            print 'Processing %s of %s' % (i, len(meme_count))    
+        if i % 500 == 0:
+            print 'Processing %s of %s meme' % (i, len(meme_count))    
             
-        total_total_ids = []
+        total_total_msgs = 0
+        total_different_ids = set()
                 
         for month in meme_count[meme]:
             for day in meme_count[meme][month]:
-                total_ids = [id_user for id_user in day if id_user != 'total']
-                different_ids = set(total_ids)
-                total_total_ids = total_total_ids + total_ids
+                total_msgs = 0
+                different_ids = set ()
+                for id_user in meme_count[meme][month][day]:
+                    total_msgs += meme_count[meme][month][day][id_user] 
+                    different_ids.add(id_user)
+                    total_different_ids.add(id_user)
+
+                total_total_msgs += total_msgs
                 
-                diversity = (len(different_ids) * 100.0) / len(total_ids)
+                diversity = (len(different_ids) * 100.0) / total_msgs
                 if not meme_diversity.has_key(meme):
                     meme_diversity[meme] = {month : {day : diversity}}
                 elif not meme_diversity[meme].has_key(month):
                     meme_diversity[meme][month] = {day : diversity}
                 elif not meme_diversity[meme][month].has_key(day):          
                     meme_diversity[meme][month][day] = diversity
-                    
-        total_different_ids = set(total_total_ids)   
-        meme_diversity[meme]['total_diversity'] = (len(total_different_ids) * 100.0) / len(total_total_ids)        
+
+        meme_diversity[meme]['total_diversity'] = (len(total_different_ids) * 100.0) / total_total_msgs
+        
     json.dump(meme_diversity, open('meme_source_diversity.json', 'w'), indent=2)
                 
                         
@@ -110,4 +116,5 @@ if __name__=='__main__':
     
     #count_meme_appearances()
     count_meme_id_diversity()
+    
     print 'DONE'
