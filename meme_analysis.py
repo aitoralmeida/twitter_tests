@@ -15,6 +15,7 @@ CORPUS = 'corpus' #corpus, corpus_lite
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
 
 def count_meme_appearances():    
+    # Counts how many times a meme appears and which are the injection points
     meme_days = {} #{'meme' : {'month' : {'day' : {'id' : 14, 'id2' : 1}}}
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
         print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
@@ -69,9 +70,10 @@ def count_meme_id_diversity():
                 total_msgs = 0
                 different_ids = set ()
                 for id_user in meme_count[meme][month][day]:
-                    total_msgs += meme_count[meme][month][day][id_user] 
-                    different_ids.add(id_user)
-                    total_different_ids.add(id_user)
+                    if id_user != 'total':
+                        total_msgs += meme_count[meme][month][day][id_user] 
+                        different_ids.add(id_user)
+                        total_different_ids.add(id_user)
 
                 total_total_msgs += total_msgs
                 
@@ -86,10 +88,6 @@ def count_meme_id_diversity():
         meme_diversity[meme]['total_diversity'] = (len(total_different_ids) * 100.0) / total_total_msgs
         
     json.dump(meme_diversity, open('meme_source_diversity.json', 'w'), indent=2)
-                
-                        
-    
-
     
 def _add_meme(meme_days, meme, month, day, user_id):       
     if not meme_days.has_key(meme):
