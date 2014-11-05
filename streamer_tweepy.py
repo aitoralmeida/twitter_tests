@@ -23,7 +23,7 @@ initial_time = time.time()
 
 class StdOutListener(StreamListener):       
  
-    def on_status(self, status):
+    def on_data(self, raw_data):
         global tweets, initial_time
         
         elapsed_time = time.time () - initial_time #elapsed secons
@@ -31,28 +31,34 @@ class StdOutListener(StreamListener):
         if elapsed_time >= 60 * 30:
             now = datetime.datetime.now()
             file_name = './corpus_new/tweets-%s-%s-%s-%s-%s.txt.gz' % (now.month, now.day, now.hour, now.minute, now.second)
-            print('Writing file:', file_name)
+            print 'Writing file:', file_name
             with gzip.open(file_name, 'w') as f:
                 for tweet in tweets:
                     f.write(json.dumps(tweet) + '\n')
                     
             tweets = []
             initial_time = time.time()
-            
-            
-        tweets.append(status._json) 
- 
+        
+        try:
+            data = json.loads(raw_data)
+            tweets.append(data) 
+        except:
+            now = datetime.datetime.now()
+            print '(%s %s:%s)Invalid json data: %s' % (now.day, now.hour, now.minute, raw_data)
+             
         return True
  
     def on_error(self, status_code):
-        print('Got an error with status code: ' + str(status_code))
-        #sleep 5 mins if an erro occurs
+        now = datetime.datetime.now()
+        print '(%s %s:%s)Got an error with status code: %s' % (now.day, now.hour, now.minute, status_code)
+        #sleep 5 mins if an error occurs
         time.sleep(5 * 60)
         return True # To continue listening
  
     def on_timeout(self):
-        print('Timeout...')
+        print 'Timeout...' 
         return True # To continue listening
+        
  
 if __name__ == '__main__':
     print 'Starting...'
@@ -62,5 +68,6 @@ if __name__ == '__main__':
     listener = StdOutListener()
     
     stream = Stream(auth, listener)
-    stream.filter(track=['#p2', '#tcot'])
+    stream.filter(track=['#p2', '#tcot', '#gov', '#dem', '#dems', '#gop'])
+
     print 'Done'
