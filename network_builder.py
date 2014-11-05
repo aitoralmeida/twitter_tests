@@ -113,13 +113,13 @@ def clean_network(path):
     G = _clean_zero_edge_nodes(G)
 
     print 'Writing...'
-    nx.write_gexf(G, open(path,'w'))
+    nx.write_gexf(G, open(path.replace('.gexf', '_processed.gexf'),'w'))
     
 def colorify_political_valence(path):
 # Color nodes according to their political valence. Uses the valence calculated
 # in tag_analysis
     print 'Loading...'
-    G = nx.read_gexf(path)
+    G = nx.read_gexf(path.replace('.gexf', '_processed.gexf'))
     users_valence = json.load(open('users_valence.json', 'r'))
     
     print 'Coloring...'
@@ -138,12 +138,12 @@ def colorify_political_valence(path):
         G.node[node]['valence'] = valence
 
     print 'Writing...'
-    nx.write_gexf(G, open(path,'w'))
+    nx.write_gexf(G, open(path.replace('.gexf', '_processed.gexf'),'w'))
     
 def clean_non_positioned(path):
 # Removes those nodes that do not have any political valence
     print 'Loading...'
-    G = nx.read_gexf(path)
+    G = nx.read_gexf(path.replace('.gexf', '_processed.gexf'))
     
     print 'Cleaning non-positioned...'
     for node in G.nodes():
@@ -151,7 +151,7 @@ def clean_non_positioned(path):
             G.remove_node(node)
             
     print 'Writing...'
-    nx.write_gexf(G, open(path,'w'))
+    nx.write_gexf(G, open(path.replace('.gexf', '_processed.gexf'),'w'))
         
 
     
