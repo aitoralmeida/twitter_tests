@@ -79,13 +79,14 @@ def count_meme_id_diversity():
                 
                 diversity = (len(different_ids) * 100.0) / total_msgs
                 if not meme_diversity.has_key(meme):
-                    meme_diversity[meme] = {month : {day : diversity}}
+                    meme_diversity[meme] = {month : {day : {'diversity' : diversity, 'msgs' : total_msgs}}}
                 elif not meme_diversity[meme].has_key(month):
-                    meme_diversity[meme][month] = {day : diversity}
+                    meme_diversity[meme][month] = {day : {'diversity' : diversity, 'msgs' : total_msgs}}
                 elif not meme_diversity[meme][month].has_key(day):          
-                    meme_diversity[meme][month][day] = diversity
+                    meme_diversity[meme][month][day] = {'diversity' : diversity, 'msgs' : total_msgs}
 
         meme_diversity[meme]['total_diversity'] = (len(total_different_ids) * 100.0) / total_total_msgs
+        meme_diversity[meme]['total_msgs'] = total_total_msgs
         
     json.dump(meme_diversity, open('meme_source_diversity.json', 'w'), indent=2)
     
