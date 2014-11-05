@@ -36,7 +36,8 @@ def count_meme_appearances():
                 
                 try:
                     tags = [x['text'] for x in tweet['entities']['hashtags']]
-                    for tag in tags:
+                    for t in tags:
+                        tag = t.lower()
                         if not tag in SEED:                                             
                             _add_meme(meme_days, tag, month, day, user_id)                    
                 except:
@@ -114,7 +115,7 @@ def _add_meme(meme_days, meme, month, day, user_id):
 if __name__=='__main__':  
     print 'Starting...'
     
-    #count_meme_appearances()
+    count_meme_appearances()
     count_meme_id_diversity()
     
     print 'DONE'
