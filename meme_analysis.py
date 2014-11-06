@@ -10,15 +10,19 @@ We consider both tags and urls as memes
 from glob import glob
 import json
 import gzip
+import pandas as pd
 
 CORPUS = 'corpus' #corpus, corpus_lite
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
+FILTER_QUANTILE = 0.95 # we only use the 5% most relevant memes
 
-def count_meme_appearances():    
+def count_meme_appearances():  
+    print 'Counting meme appearances'
     # Counts how many times a meme appears and which are the injection points
     meme_days = {} #{'meme' : {'month' : {'day' : {'id' : 14, 'id2' : 1}}}
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        if i % 10 == 0:
+            print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
         with gzip.open(file_name, 'r') as f:
             for line in f:
                 try:
@@ -50,12 +54,12 @@ def count_meme_appearances():
                         _add_meme(meme_days, url, month, day, user_id)   
                 except:
                     pass
-                
-                
-                        
+    print 'Writing file...'                    
     json.dump(meme_days, open('meme_count.json', 'w'), indent=2)
     
 def count_meme_id_diversity():
+    print 'Calculating meme diversity'
+    print ' - Loading file'
     meme_count = json.load(open('meme_count.json', 'r'))
     meme_diversity = {}
     for i, meme in enumerate(meme_count):     
@@ -88,6 +92,7 @@ def count_meme_id_diversity():
         meme_diversity[meme]['total_diversity'] = (len(total_different_ids) * 100.0) / total_total_msgs
         meme_diversity[meme]['total_msgs'] = total_total_msgs
         
+    print 'Writing file...'   
     json.dump(meme_diversity, open('meme_source_diversity.json', 'w'), indent=2)
     
 def _add_meme(meme_days, meme, month, day, user_id):       
@@ -109,6 +114,24 @@ def _add_meme(meme_days, meme, month, day, user_id):
     else:  
         meme_days[meme][month][day]['total'] += 1
         meme_days[meme][month][day][user_id] += 1
+        
+def filter_relevant_memes():
+    print 'Filtering relevant memes'
+    print ' - Loading file...' 
+    meme_diversity = json.load(open('meme_source_diversity.json', 'r'))
+    msg_totals = [meme_diversity[meme]['total_msgs'] for meme in meme_diversity]
+    
+    totals = pd.Series(msg_totals)
+    min_msgs = totals.quantile(FILTER_QUANTILE) # only use the 5% most relevant
+    relevant_memes = [meme for meme in meme_diversity if meme_diversity[meme]['total_msgs'] >= min_msgs]
+    filtered_meme_diversity = {}
+    for meme in relevant_memes:
+        filtered_meme_diversity[meme] = meme_diversity[meme]
+    
+    print ' - Total filtered memes: %s' % (len(filtered_meme_diversity))
+    print ' - Writing file...' 
+    json.dump(filtered_meme_diversity, open('meme_source_diversity_filtered.json', 'w'), indent=2)
+    
 
     
 if __name__=='__main__':  
@@ -116,5 +139,6 @@ if __name__=='__main__':
     
     count_meme_appearances()
     count_meme_id_diversity()
+    filter_relevant_memes()
     
     print 'DONE'
