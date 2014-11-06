@@ -56,12 +56,12 @@ def count_meme_appearances():
                 except:
                     pass
     print 'Writing file...'                    
-    json.dump(meme_days, open('./' + DATA + 'meme_count.json', 'w'), indent=2)
+    json.dump(meme_days, open('./' + DATA + '/meme_count.json', 'w'), indent=2)
     
 def count_meme_id_diversity():
     print 'Calculating meme diversity'
     print ' - Loading file'
-    meme_count = json.load(open('./' + DATA + 'meme_count.json', 'r'))
+    meme_count = json.load(open('./' + DATA + '/meme_count.json', 'r'))
     meme_diversity = {}
     for i, meme in enumerate(meme_count):     
         if i % 500 == 0:
@@ -94,7 +94,7 @@ def count_meme_id_diversity():
         meme_diversity[meme]['total_msgs'] = total_total_msgs
         
     print 'Writing file...'   
-    json.dump(meme_diversity, open('./' + DATA + 'meme_source_diversity.json', 'w'), indent=2)
+    json.dump(meme_diversity, open('./' + DATA + '/meme_source_diversity.json', 'w'), indent=2)
     
 def _add_meme(meme_days, meme, month, day, user_id):       
     if not meme_days.has_key(meme):
@@ -119,7 +119,7 @@ def _add_meme(meme_days, meme, month, day, user_id):
 def filter_relevant_memes():
     print 'Filtering relevant memes'
     print ' - Loading file...' 
-    meme_diversity = json.load(open('./' + DATA + 'meme_source_diversity.json', 'r'))
+    meme_diversity = json.load(open('./' + DATA + '/meme_source_diversity.json', 'r'))
     msg_totals = [meme_diversity[meme]['total_msgs'] for meme in meme_diversity]
     
     totals = pd.Series(msg_totals)
@@ -131,7 +131,7 @@ def filter_relevant_memes():
     
     print ' - Total filtered memes: %s' % (len(filtered_meme_diversity))
     print ' - Writing file...' 
-    json.dump(filtered_meme_diversity, open('./' + DATA + 'meme_source_diversity_filtered.json', 'w'), indent=2)
+    json.dump(filtered_meme_diversity, open('./' + DATA + '/meme_source_diversity_filtered.json', 'w'), indent=2)
     
 
     
