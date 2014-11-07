@@ -45,7 +45,6 @@ def count_meme_appearances():
                 from_id = ''
                 if tweet.has_key('retweeted_status'):
                     from_id = tweet['retweeted_status']['user']['id']  
-                    print user_id
                 
                 try:
                     tags = [x['text'] for x in tweet['entities']['hashtags']]
