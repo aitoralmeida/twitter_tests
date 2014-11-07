@@ -11,6 +11,7 @@ from glob import glob
 import json
 import gzip
 import pandas as pd
+import networkx as nx
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
@@ -108,13 +109,17 @@ def count_meme_id_diversity():
     json.dump(meme_diversity, open('./' + DATA + '/meme_source_diversity.json', 'w'), indent=2)
     
 def _add_meme(meme_days, meme, month, day, user_id, from_id):
-    # Adds a meme to the dict       
+    # Adds a meme to the dict
+    list_to_add = []
+    if from_id != '':
+        list_to_add.append(from_id)
+        
     if not meme_days.has_key(meme):
-        meme_days[meme] = {month : {day : {'total' : 1, user_id : {'total' : 1, 'from_id': [from_id]}}}}
+        meme_days[meme] = {month : {day : {'total' : 1, user_id : {'total' : 1, 'from_id': list_to_add}}}}
     elif not meme_days[meme].has_key(month):
-        meme_days[meme][month] = {day : {'total' : 1, user_id : {'total' : 1, 'from_id': [from_id]}}}
+        meme_days[meme][month] = {day : {'total' : 1, user_id : {'total' : 1, 'from_id': list_to_add}}}
     elif not meme_days[meme][month].has_key(day):          
-        meme_days[meme][month][day] = {'total' : 1, user_id : {'total' : 1, 'from_id': [from_id]}}
+        meme_days[meme][month][day] = {'total' : 1, user_id : {'total' : 1, 'from_id': list_to_add}}
     elif not meme_days[meme][month][day].has_key(user_id):
         try:
             total = meme_days[meme][month][day]['total']
@@ -123,15 +128,16 @@ def _add_meme(meme_days, meme, month, day, user_id, from_id):
             total = 1  
         meme_days[meme][month][day]['total'] = total
         meme_days[meme][month][day][user_id]['total'] = 1
-        meme_days[meme][month][day][user_id]['from_id'] = [from_id]
+        meme_days[meme][month][day][user_id]['from_id'] = list_to_add
 
     else:  
         meme_days[meme][month][day]['total'] += 1
         meme_days[meme][month][day][user_id]['total'] += 1
-        unique_ids = set(meme_days[meme][month][day][user_id]['from_id'])
-        unique_ids.add(from_id)
-        meme_days[meme][month][day][user_id]['from_id'] = list(unique_ids)
-        meme_days[meme][month][day][user_id]['from_id'].add(from_id)
+        if from_id != '':
+            unique_ids = set(meme_days[meme][month][day][user_id]['from_id'])
+            unique_ids.add(from_id)
+            meme_days[meme][month][day][user_id]['from_id'] = list(unique_ids)
+
         
 def filter_relevant_memes():
     # filters relevant memes acording to the quantile specified in FILTER_QUANTILE
@@ -155,14 +161,33 @@ def filter_relevant_memes():
     print ' - Total filtered memes: %s' % (len(filtered_meme_diversity))
     print ' - Writing file...' 
     json.dump(filtered_meme_diversity, open('./' + DATA + '/meme_source_diversity_filtered.json', 'w'), indent=2)
+
+def build_viral_network():
+    print 'Building viral network...'
+    meme_count = json.load(open('./' + DATA + '/meme_count.json', 'r'))
+    G = nx.DiGraph()
+    for i, meme in enumerate(meme_count):     
+        if i % 500 == 0:
+            print 'Processing %s of %s meme' % (i, len(meme_count))    
+            for month in meme_count[meme]:
+                for day in meme_count[meme][month]:
+                    for id_user in meme_count[meme][month][day]:
+                        if id_user != 'total':
+                            from_ids = meme_count[meme][month][day][id_user]['from_id']
+                            for from_id in from_ids:
+                                G.add_edge(from_id, id_user, label = meme)
+                            
+    print 'Writing file...'
+    nx.write_gexf(G, open('./networks/viral_memes.gexf','w'))
     
 
     
 if __name__=='__main__':  
     print 'Starting...'
     
-    count_meme_appearances()
-    count_meme_id_diversity()
-    filter_relevant_memes()
+#    count_meme_appearances()
+#    count_meme_id_diversity()
+#    filter_relevant_memes()
+    build_viral_network()
     
     print 'DONE'
