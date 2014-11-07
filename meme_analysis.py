@@ -166,7 +166,7 @@ def build_viral_network():
     print 'Building viral network...'
     meme_count = json.load(open('./' + DATA + '/meme_count.json', 'r'))
     G = nx.DiGraph()
-    for i, meme in enumerate(meme_count):     
+    for i, meme in enumerate(meme_count):  
         if i % 2000 == 0:
             print 'Processing %s of %s meme' % (i, len(meme_count))    
         for month in meme_count[meme]:
@@ -175,7 +175,7 @@ def build_viral_network():
                     if id_user != 'total':
                         from_ids = meme_count[meme][month][day][id_user]['from_id']
                         for from_id in from_ids:
-                            G.add_edge(from_id, id_user, label = meme)
+                            G.add_edge(from_id, id_user, meme = meme)
                             
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/viral_memes.gexf','w'))
