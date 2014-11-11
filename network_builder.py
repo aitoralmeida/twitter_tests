@@ -16,7 +16,8 @@ def build_networks(process_retweets = True):
     G_retweet = nx.DiGraph()
     G_mentions = nx.DiGraph()
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        if i % 10 == 0:
+            print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
         G_tot, G_retweet, G_mentions = _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets)
     
     return G_tot, G_retweet, G_mentions

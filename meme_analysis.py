@@ -16,7 +16,7 @@ import networkx as nx
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
-FILTER_QUANTILE = 0.95 # we only use the 5% most relevant memes
+FILTER_QUANTILE = 0.99 # we only use the 1% most relevant memes
 
 def count_meme_appearances(): 
     # Counts how many times a meme appears and which are the injection points
@@ -146,11 +146,13 @@ def filter_relevant_memes():
     meme_diversity = json.load(open('./' + DATA + '/meme_source_diversity.json', 'r'))
     
     # get the msg number for each meme
-    msg_totals = [meme_diversity[meme]['total_msgs'] for meme in meme_diversity]
+#    msg_totals = [meme_diversity[meme]['total_msgs'] for meme in meme_diversity]
     # calculate the minumun msg ammount necessary to be relevant. We do this taking
     # the higher 5%.
-    totals = pd.Series(msg_totals)
-    min_msgs = totals.quantile(FILTER_QUANTILE)
+#    totals = pd.Series(msg_totals)
+#    min_msgs = totals.quantile(FILTER_QUANTILE)
+    min_msgs = 39 #days captured X 3
+    print 'Minimun messages to be relevant: %s' % (min_msgs)
     # get the relevant memes
     relevant_memes = [meme for meme in meme_diversity if meme_diversity[meme]['total_msgs'] >= min_msgs]
     # copy their data
@@ -158,17 +160,25 @@ def filter_relevant_memes():
     for meme in relevant_memes:
         filtered_meme_diversity[meme] = meme_diversity[meme]
     
-    print ' - Total filtered memes: %s' % (len(filtered_meme_diversity))
+    print ' - Total relevant memes: %s' % (len(filtered_meme_diversity))
     print ' - Writing file...' 
     json.dump(filtered_meme_diversity, open('./' + DATA + '/meme_source_diversity_filtered.json', 'w'), indent=2)
 
-def build_viral_network():
+def build_viral_network(filter_relevant = True):
     print 'Building viral network...'
     meme_count = json.load(open('./' + DATA + '/meme_count.json', 'r'))
+    if filter_relevant:
+        filtered_meme_diversity = json.load(open('./' + DATA + '/meme_source_diversity_filtered.json', 'r'))
+        filtered_memes = [meme for meme in filtered_meme_diversity]
     G = nx.DiGraph()
     for i, meme in enumerate(meme_count):  
         if i % 2000 == 0:
-            print 'Processing %s of %s meme' % (i, len(meme_count))    
+            print 'Processing %s of %s meme' % (i, len(meme_count))
+            
+        if filter_relevant:
+            if not meme in filtered_memes:
+                continue
+            
         for month in meme_count[meme]:
             for day in meme_count[meme][month]:
                 for id_user in meme_count[meme][month][day]:
@@ -187,7 +197,7 @@ if __name__=='__main__':
     
 #    count_meme_appearances()
 #    count_meme_id_diversity()
-#    filter_relevant_memes()
+    filter_relevant_memes()
     build_viral_network()
     
     print 'DONE'

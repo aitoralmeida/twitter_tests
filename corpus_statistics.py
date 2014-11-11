@@ -19,7 +19,8 @@ def total_users():
     total_replies = 0
     tweet_times = {} # {'1230' : 10, '1200': 4}
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
-        print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        if i % 50 == 0:
+            print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
         with gzip.open(file_name, 'r') as f:
             for line in f:
                 try:
@@ -36,7 +37,7 @@ def total_users():
                 total_tweets += 1
                 
                 if tweet.has_key('retweeted_status'):
-                    total_retweets += 1
+                    total_retweets += 1                   
                     
                 total_mentions += len([mention['id_str'] for mention in tweet['entities']['user_mentions']])
                 
