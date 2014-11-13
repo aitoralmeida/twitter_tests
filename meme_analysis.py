@@ -231,9 +231,114 @@ def build_influence_network():
                     G.add_edge(id_from, id_to, weight=weight)
             except:
                 pass
+    
+    print 'Initializing influence & passivity...'        
+    for node in G.nodes():
+        G.node[node]['passivity'] = 1
+        G.node[node]['influence'] = 1
             
     print 'Writing file...'
-    nx.write_gexf(G, open('./networks/influence.gexf','w'))
+    nx.write_gexf(G, open('./networks/influence_network.gexf','w'))
+    
+def calculate_influence_passivity(m = 10):
+    print 'Calculating influence and passivity...'
+    G = nx.read_gexf('./networks/influence_network.gexf')
+    for i  in range(m):
+        print '%s of %s' % (i,m)
+        _update_passivity_influence(G)
+    
+    print 'Writing file...'    
+    nx.write_gexf(G, open('./networks/influence_passivity.gexf','w'))
+    
+def _update_passivity_influence(G):
+    acceptance_rates_aux = {} #{id_to : {id_from : 13, 'total: 25}}
+    #get the data necessary to calculate acceptance rate
+    for edge in G.edges(data=True):
+        id_from = edge[0]
+        id_to = edge[1]
+        weight = edge[2]['weight']
+        if not acceptance_rates_aux.has_key(id_to):
+            acceptance_rates_aux[id_to] = {id_from : weight, 'total' : weight}
+        elif not acceptance_rates_aux[id_to].has_key(id_from):
+            acceptance_rates_aux[id_to][id_from] = weight
+            acceptance_rates_aux[id_to]['total'] += weight
+        else:
+            print 'ERROR'
+            
+    # calculate acceptance rates        
+    acceptance_rates = {} #{id_from : {id_to : 0.1}
+    for id_to in acceptance_rates_aux:
+        total = acceptance_rates_aux[id_to]['total']
+        for id_from in acceptance_rates_aux[id_to]:
+            accepted = acceptance_rates_aux[id_to][id_from]
+            rate = accepted * 1.0 / total
+            if not acceptance_rates.has_key(id_from):
+                acceptance_rates[id_from] = {id_to : rate}
+            elif not acceptance_rates[id_from].has_key(id_to):
+                acceptance_rates[id_from][id_to] = rate
+                
+    # calculate the rejection rates
+    rejection_rates = {} #{id_to : {id_from : 0.1}
+    for id_to in acceptance_rates_aux:
+        for id_from in acceptance_rates_aux[id_to]:
+            try:
+                rejected = 1 - acceptance_rates_aux[id_from][id_to]
+                total = 1 - acceptance_rates_aux[id_from]['total']
+            except:
+                total = 1
+                rejected = 1
+                
+            rate = rejected * 1.0 / total
+            if not rejection_rates.has_key(id_to):
+                rejection_rates[id_to] = {id_from : rate}
+            elif not rejection_rates[id_to].has_key(id_from):
+                rejection_rates[id_to][id_from] = rate
+    
+     
+    
+    passivities = {}      
+    # calculate passivity            
+    for edge in G.edges():
+        id_from = edge[0]
+        id_to = edge[1]        
+        if passivities.has_key(id_from):
+            passivities[id_from] += rejection_rates[id_to][id_from] * G.node[id_to]['influence']
+        else: 
+            passivities[id_from] = rejection_rates[id_to][id_from] * G.node[id_to]['influence']
+        
+    # update passivities    
+    total_passivity = 0
+    for id_from in passivities:
+        G.node[id_from]['passivity'] = passivities[id_from]
+        total_passivity += passivities[id_from]
+    
+    # calculate influence    
+    influences = {}   
+    for edge in G.edges():
+        id_from = edge[0]
+        id_to = edge[1]  
+        if influences.has_key(id_from):
+            influences[id_from] += acceptance_rates[id_from][id_to] * G.node[id_to]['passivity']
+        else:
+            influences[id_from] = acceptance_rates[id_from][id_to] * G.node[id_to]['passivity']
+    
+    # update influences    
+    total_influences = 0
+    for id_from in influences:
+        G.node[id_from]['influence'] = influences[id_from]
+        total_influences += influences[id_from]
+        
+    #normalize passivities and influences
+    for n in G.nodes(data = True):
+        current_influence = n[1]['influence']
+        normalized_influence = (current_influence * 1.0) / total_influences
+        G.node[n[0]]['influence'] =  normalized_influence
+        
+        current_passivity = n[1]['passivity']
+        normalized_passivity = (current_passivity * 1.0) / total_passivity
+        G.node[n[0]]['passivity'] = normalized_passivity 
+        
+                
 
     
 if __name__=='__main__':  
@@ -243,6 +348,7 @@ if __name__=='__main__':
 #    count_meme_id_diversity()
 #    filter_relevant_memes()
 #    build_viral_network()
-    build_influence_network()
+#    build_influence_network()
+    calculate_influence_passivity()
     
     print 'DONE'
