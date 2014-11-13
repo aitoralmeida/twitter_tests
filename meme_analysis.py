@@ -240,7 +240,7 @@ def build_influence_network():
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/influence_network.gexf','w'))
     
-def calculate_influence_passivity(m = 10):
+def calculate_influence_passivity(m = 30):
     print 'Calculating influence and passivity...'
     G = nx.read_gexf('./networks/influence_network.gexf')
     for i  in range(m):
@@ -344,11 +344,11 @@ def _update_passivity_influence(G):
 if __name__=='__main__':  
     print 'Starting...'
     
-#    count_meme_appearances()
-#    count_meme_id_diversity()
-#    filter_relevant_memes()
-#    build_viral_network()
-#    build_influence_network()
+    count_meme_appearances()
+    count_meme_id_diversity()
+    filter_relevant_memes()
+    build_viral_network()
+    build_influence_network()
     calculate_influence_passivity()
     
     print 'DONE'
