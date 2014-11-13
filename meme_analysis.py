@@ -24,6 +24,8 @@ def count_meme_appearances():
     total_tags = 0
     total_urls = 0
     meme_days = {} #{'meme' : {'month' : {'day' : {'id' : 14, 'id2' : 1}}}
+    url_count = {} # {'id': 24}
+    retweet_count = {} # only those retweets with URLs {id_from : {id_to : 13}}
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
         if i % 10 == 0:
             print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
@@ -45,7 +47,22 @@ def count_meme_appearances():
                 
                 from_id = ''
                 if tweet.has_key('retweeted_status'):
-                    from_id = tweet['retweeted_status']['user']['id']  
+                    from_id = tweet['retweeted_status']['user']['id'] 
+                    original_tweet = tweet['retweeted_status']
+                    original_urls = [m['expanded_url'] for m in original_tweet['entities']['urls']]
+                    if url_count.has_key(from_id):
+                        url_count[from_id] += len(original_urls)
+                    else:
+                        url_count[from_id] = len(original_urls)                    
+                    
+                    if len(original_urls) > 0:
+                        if not retweet_count.has_key(from_id):
+                            retweet_count[from_id] = {user_id : len(original_urls)}
+                        elif not retweet_count[from_id].has_key(user_id):
+                            retweet_count[from_id][user_id] = len(original_urls)
+                        else:
+                            retweet_count[from_id][user_id] += len(original_urls)
+                        
                 
                 try:
                     tags = [x['text'] for x in tweet['entities']['hashtags']]
@@ -59,6 +76,12 @@ def count_meme_appearances():
                 
                 try:
                     urls = [m['expanded_url'] for m in tweet['entities']['urls']]
+                    if not tweet.has_key('retweeted_status'):
+                        if url_count.has_key(user_id):
+                            url_count[user_id] += len(urls)
+                        else:
+                            url_count[user_id] = len(urls)
+                        
                     for url in urls:
                         _add_meme(meme_days, url, month, day, user_id, from_id) 
                         total_urls += 1
@@ -68,6 +91,8 @@ def count_meme_appearances():
     print 'Total URLs: %s' % (total_urls)
     print 'Writing file...'                    
     json.dump(meme_days, open('./' + DATA + '/meme_count.json', 'w'), indent=2)
+    json.dump(url_count, open('./' + DATA + '/url_count.json', 'w'), indent=2)
+    json.dump(retweet_count, open('./' + DATA + '/retweet_count.json', 'w'), indent=2)
     
 def count_meme_id_diversity():
     # calculates the diversity of each meme, both per day and global.
@@ -190,6 +215,25 @@ def build_viral_network(filter_relevant = True):
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/viral_memes.gexf','w'))
     
+def build_influence_network():
+    print 'Building influence network...'
+    url_count = json.load(open('./' + DATA + '/url_count.json', 'r'))
+    retweet_count = json.load(open('./' + DATA + '/retweet_count.json', 'r'))
+    G = nx.DiGraph()    
+    
+    for id_from in url_count:
+        total_urls = url_count[id_from]
+        if total_urls > 3:
+            G.add_node(id_from, total_urls=total_urls)
+            try:
+                for id_to in retweet_count[id_from]:
+                    weight = retweet_count[id_from][id_to] * 1.0 / total_urls
+                    G.add_edge(id_from, id_to, weight=weight)
+            except:
+                pass
+            
+    print 'Writing file...'
+    nx.write_gexf(G, open('./networks/influence.gexf','w'))
 
     
 if __name__=='__main__':  
@@ -197,7 +241,8 @@ if __name__=='__main__':
     
 #    count_meme_appearances()
 #    count_meme_id_diversity()
-    filter_relevant_memes()
-    build_viral_network()
+#    filter_relevant_memes()
+#    build_viral_network()
+    build_influence_network()
     
     print 'DONE'
