@@ -215,7 +215,7 @@ def build_viral_network(filter_relevant = True):
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/viral_memes.gexf','w'))
     
-def build_influence_network():
+def build_influence_network(min_urls = 3):
     print 'Building influence network...'
     url_count = json.load(open('./' + DATA + '/url_count.json', 'r'))
     retweet_count = json.load(open('./' + DATA + '/retweet_count.json', 'r'))
@@ -223,7 +223,7 @@ def build_influence_network():
     
     for id_from in url_count:
         total_urls = url_count[id_from]
-        if total_urls > 3:
+        if total_urls > min_urls:
             G.add_node(id_from, total_urls=total_urls)
             try:
                 for id_to in retweet_count[id_from]:
@@ -232,10 +232,17 @@ def build_influence_network():
             except:
                 pass
     
-    print 'Initializing influence & passivity...'        
-    for node in G.nodes():
-        G.node[node]['passivity'] = 1
-        G.node[node]['influence'] = 1
+    print 'Prunning non relevant nodes. Initializing influence & passivity...'        
+    for node in G.nodes(data = True):
+        try:
+            total_urls = node[1]['total_urls']
+        except:
+            total_urls = 0
+        if total_urls < min_urls:
+            G.remove_node(node[0])
+        else:
+            G.node[node[0]]['passivity'] = 1
+            G.node[node[0]]['influence'] = 1
             
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/influence_network.gexf','w'))
