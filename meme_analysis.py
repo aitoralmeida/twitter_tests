@@ -221,33 +221,40 @@ def build_influence_network(min_urls = 3):
     retweet_count = json.load(open('./' + DATA + '/retweet_count.json', 'r'))
     G = nx.DiGraph()    
     
+    for n in url_count:
+        G.add_node(n, total_urls = url_count[n], passivity = 1, influence = 1)        
+    
     for id_from in url_count:
         total_urls = url_count[id_from]
-        if total_urls > min_urls:
-            G.add_node(id_from, total_urls=total_urls)
-            try:
-                for id_to in retweet_count[id_from]:
-                    weight = retweet_count[id_from][id_to] * 1.0 / total_urls
-                    G.add_edge(id_from, id_to, weight=weight)
-            except:
-                pass
+        try:
+            for id_to in retweet_count[id_from]:
+                weight = retweet_count[id_from][id_to] * 1.0 / total_urls
+                G.add_edge(id_from, id_to, weight=weight)
+        except:
+            pass
     
-    print 'Prunning non relevant nodes. Initializing influence & passivity...'        
+    print 'Prunning non relevant nodes...'        
     for node in G.nodes(data = True):
         try:
             total_urls = node[1]['total_urls']
         except:
             total_urls = 0
+        # prunning those nodes that have not tweeted enough URLs
         if total_urls < min_urls:
-            G.remove_node(node[0])
-        else:
-            G.node[node[0]]['passivity'] = 1
-            G.node[node[0]]['influence'] = 1
+            G.remove_node(node[0]) 
+    
+    # prunning nodes without connections      
+    degrees = G.degree()
+    for n in degrees:
+        if degrees[n] == 0:
+           G.remove_node(n) 
+               
+        
             
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/influence_network.gexf','w'))
     
-def calculate_influence_passivity(m = 10):
+def calculate_influence_passivity(m = 30):
     print 'Calculating influence and passivity...'
     G = nx.read_gexf('./networks/influence_network.gexf')
     for i  in range(m):
@@ -368,7 +375,7 @@ if __name__=='__main__':
 #    count_meme_id_diversity()
 #    filter_relevant_memes()
 #    build_viral_network()
-#    build_influence_network()
+    build_influence_network()
     calculate_influence_passivity()
     
     print 'DONE'
