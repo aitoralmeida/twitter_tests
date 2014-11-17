@@ -38,3 +38,22 @@ def get_friends(id_str):
     for f in friends:
         friend_ids.append(f.id_str)
     return friend_ids
+    
+def get_relations(id_str):
+    relations = {} #{'friends' : [], 'followers': []}
+    user = api.get_user(id_str)
+    followers = user.followers_ids()
+    friends = user.friends()
+    relations['friends'] = [f.id_str for f in friends]
+    relations['followers'] = followers
+    
+    return relations
+    
+def update_relations(id_list):
+    all_relations = {} # {'123456789' : {'friends' : [], 'followers': []}}
+    for user_id in id_list:
+        relations = get_relations(user_id)
+        all_relations[user_id] = relations
+    
+    return all_relations
+    
