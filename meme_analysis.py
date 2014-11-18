@@ -369,6 +369,7 @@ def _update_passivity_influence(G):
 def get_meme_polarity():
     print 'Getting polarities...'
     polarities = {} #{'meme' : {'total' : 5, 'count' : 3}}
+    polarization = {} #{'meme' : {'positive' : [ids], 'negative' : [ids]}}
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
         if i % 10 == 0:
             print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
@@ -402,14 +403,28 @@ def get_meme_polarity():
                         pass
                     
                     for meme in memes:
+                        # meme polarity
                         if polarities.has_key(meme):
                             polarities[meme]['total'] += polarity
                             polarities[meme]['count'] += 1
                         else:
                             polarities[meme] = {'total' : polarity, 'count' : 1}
+                        
+                        # meme user polarizations
+                        if polarity > 0:
+                            if polarization.has_key(meme):
+                                polarization[meme]['positive'].append(user_id)
+                            else:
+                                polarization[meme] = {'positive' : [user_id], 'negative' : []}
+                        else:
+                            if polarization.has_key(meme):
+                                polarization[meme]['negative'].append(user_id)
+                            else:
+                                polarization[meme] = {'positive' : [], 'negative' : [user_id]}
                             
     print 'Writing file...'                    
     json.dump(polarities, open('./' + DATA + '/meme_polarity.json', 'w'), indent=2)      
+    json.dump(polarization, open('./' + DATA + '/meme_user_polarization.json', 'w'), indent=2)      
 
     
 if __name__=='__main__':  
