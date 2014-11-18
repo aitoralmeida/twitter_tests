@@ -12,6 +12,7 @@ import json
 import gzip
 import pandas as pd
 import networkx as nx
+from sentiment_analysis_textblob import get_tweet_polarity
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
@@ -176,7 +177,7 @@ def filter_relevant_memes():
     # the higher 5%.
 #    totals = pd.Series(msg_totals)
 #    min_msgs = totals.quantile(FILTER_QUANTILE)
-    min_msgs = 39 #days captured X 3
+    min_msgs = 21 * 3 #days captured X 3
     print 'Minimun messages to be relevant: %s' % (min_msgs)
     # get the relevant memes
     relevant_memes = [meme for meme in meme_diversity if meme_diversity[meme]['total_msgs'] >= min_msgs]
@@ -215,7 +216,7 @@ def build_viral_network(filter_relevant = True):
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/viral_memes.gexf','w'))
     
-def build_influence_network(min_urls = 3):
+def build_influence_network(min_urls = 10):
     print 'Building influence network...'
     url_count = json.load(open('./' + DATA + '/url_count.json', 'r'))
     retweet_count = json.load(open('./' + DATA + '/retweet_count.json', 'r'))
@@ -365,7 +366,50 @@ def _update_passivity_influence(G):
         normalized_passivity = (current_passivity * 1.0) / total_passivity
         G.node[n[0]]['passivity'] = normalized_passivity 
         
+def get_meme_polarity():
+    print 'Getting polarities...'
+    polarities = {} #{'meme' : {'total' : 5, 'count' : 3}}
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
+        if i % 10 == 0:
+            print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        with gzip.open(file_name, 'r') as f:
+            for line in f:
+                try:
+                    tweet = json.loads(line)
+                except:
+                    continue
+            
+                try:
+                    user_id = tweet['user']['id']                              
+                except:
+                    continue
                 
+                text = tweet['text']
+                polarity = get_tweet_polarity(text)
+                
+                if polarity != 0:     
+                    memes = []
+                    try:
+                        tags = [x['text'] for x in tweet['entities']['hashtags']]
+                        memes += tags
+                    except:
+                        pass
+                    
+                    try:
+                        urls = [m['expanded_url'] for m in tweet['entities']['urls']]
+                        memes += urls
+                    except:
+                        pass
+                    
+                    for meme in memes:
+                        if polarities.has_key(meme):
+                            polarities[meme]['total'] += polarity
+                            polarities[meme]['count'] += 1
+                        else:
+                            polarities[meme] = {'total' : polarity, 'count' : 1}
+                            
+    print 'Writing file...'                    
+    json.dump(polarities, open('./' + DATA + '/meme_polarity.json', 'w'), indent=2)      
 
     
 if __name__=='__main__':  
@@ -375,7 +419,8 @@ if __name__=='__main__':
 #    count_meme_id_diversity()
 #    filter_relevant_memes()
 #    build_viral_network()
-    build_influence_network()
-    calculate_influence_passivity()
+#    build_influence_network()
+#    calculate_influence_passivity()
+    get_meme_polarity()
     
     print 'DONE'
