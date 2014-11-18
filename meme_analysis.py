@@ -368,7 +368,7 @@ def _update_passivity_influence(G):
         
 def get_meme_polarity():
     print 'Getting polarities...'
-    polarities = {} #{'meme' : {'total' : 5, 'count' : 3}}
+    polarities = {} #{'meme' : {'total' : 5, 'count' : 3, 'avg' : 5/3}}
     polarization = {} #{'meme' : {'positive' : [ids], 'negative' : [ids]}}
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
         if i % 10 == 0:
@@ -407,8 +407,9 @@ def get_meme_polarity():
                         if polarities.has_key(meme):
                             polarities[meme]['total'] += polarity
                             polarities[meme]['count'] += 1
+                            polarities[meme]['avg'] = polarities[meme]['total'] * 1.0 / polarities[meme]['count']
                         else:
-                            polarities[meme] = {'total' : polarity, 'count' : 1}
+                            polarities[meme] = {'total' : polarity, 'count' : 1, 'avg' : polarity}
                         
                         # meme user polarizations
                         if polarity > 0:
