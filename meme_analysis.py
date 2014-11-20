@@ -13,11 +13,13 @@ import gzip
 import pandas as pd
 import networkx as nx
 from sentiment_analysis_textblob import get_tweet_polarity
+import time
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
 FILTER_QUANTILE = 0.99 # we only use the 1% most relevant memes
+INTERVAL = 600 # 10 mins
 
 def count_meme_appearances(): 
     # Counts how many times a meme appears and which are the injection points
@@ -25,8 +27,10 @@ def count_meme_appearances():
     total_tags = 0
     total_urls = 0
     meme_days = {} #{'meme' : {'month' : {'day' : {'id' : 14, 'id2' : 1}}}
+    meme_intervals = {} # {'meme': {'epoch' : {'tweet' : 12, 'retweet' : 23}}}
     url_count = {} # {'id': 24}
     retweet_count = {} # only those retweets with URLs {id_from : {id_to : 13}}
+    start_epoch = 0
     for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
         if i % 10 == 0:
             print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
@@ -46,8 +50,17 @@ def count_meme_appearances():
                 except:
                     continue
                 
+                epoch = time.mktime(time.strptime(post_datetime,"%a %b %d %H:%M:%S +0000 %Y"))
+                if i == 0:
+                    start_epoch = epoch
+                
+                if (epoch - start_epoch) >= 600:
+                    start_epoch = epoch
+                
+                is_retweet = False            
                 from_id = ''
                 if tweet.has_key('retweeted_status'):
+                    is_retweet = True
                     from_id = tweet['retweeted_status']['user']['id'] 
                     original_tweet = tweet['retweeted_status']
                     original_urls = [m['expanded_url'] for m in original_tweet['entities']['urls']]
@@ -70,8 +83,11 @@ def count_meme_appearances():
                     for t in tags:
                         tag = t.lower()
                         if not tag in SEED:                                             
-                            _add_meme(meme_days, tag, month, day, user_id, from_id)
+                            _add_meme_days(meme_days, tag, month, day, user_id, from_id)
                             total_tags += 1
+                            _add_meme_interval(meme_intervals, tag, start_epoch, is_retweet)
+                            
+                            
                 except:
                     pass
                 
@@ -84,14 +100,16 @@ def count_meme_appearances():
                             url_count[user_id] = len(urls)
                         
                     for url in urls:
-                        _add_meme(meme_days, url, month, day, user_id, from_id) 
+                        _add_meme_days(meme_days, url, month, day, user_id, from_id) 
                         total_urls += 1
+                        _add_meme_interval(meme_intervals, url, start_epoch, is_retweet)
                 except:
                     pass
     print 'Total tags: %s' % (total_tags)
     print 'Total URLs: %s' % (total_urls)
     print 'Writing file...'                    
     json.dump(meme_days, open('./' + DATA + '/meme_count.json', 'w'), indent=2)
+    json.dump(meme_intervals, open('./' + DATA + '/meme_intervals.json', 'w'), indent=2)
     json.dump(url_count, open('./' + DATA + '/url_count.json', 'w'), indent=2)
     json.dump(retweet_count, open('./' + DATA + '/retweet_count.json', 'w'), indent=2)
     
@@ -134,7 +152,7 @@ def count_meme_id_diversity():
     print 'Writing file...'   
     json.dump(meme_diversity, open('./' + DATA + '/meme_source_diversity.json', 'w'), indent=2)
     
-def _add_meme(meme_days, meme, month, day, user_id, from_id):
+def _add_meme_days(meme_days, meme, month, day, user_id, from_id):
     # Adds a meme to the dict
     list_to_add = []
     if from_id != '':
@@ -163,6 +181,24 @@ def _add_meme(meme_days, meme, month, day, user_id, from_id):
             unique_ids = set(meme_days[meme][month][day][user_id]['from_id'])
             unique_ids.add(from_id)
             meme_days[meme][month][day][user_id]['from_id'] = list(unique_ids)
+            
+def _add_meme_interval(meme_intervals, meme, start_epoch, is_retweet):
+    if meme_intervals.has_key(meme):
+        if meme_intervals[meme].has_key(start_epoch):
+            if is_retweet:
+                meme_intervals[meme][start_epoch]['retweet'] += 1
+            else:
+                meme_intervals[meme][start_epoch]['tweet'] += 1
+        else:
+            if is_retweet:
+                meme_intervals[meme][start_epoch] = {'tweet' : 0, 'retweet' : 1}
+            else:
+                meme_intervals[meme][start_epoch] = {'tweet' : 1, 'retweet' : 0}                                
+    else:
+        if is_retweet:
+            meme_intervals[meme] = {start_epoch : {'tweet' : 0, 'retweet' : 1}}
+        else:
+            meme_intervals[meme] = {start_epoch : {'tweet' : 1, 'retweet' : 0}}
 
         
 def filter_relevant_memes():
