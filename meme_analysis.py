@@ -492,13 +492,12 @@ def calculate_burstiness():
                             print tweet_difference
                             print retweet_difference
                     except ZeroDivisionError:
-                        burstiness = 0
-                        
-                    if burstiness > 0:
-                        if meme_burstiness.has_key(meme):
-                            meme_burstiness[meme][current_interval] = burstiness
-                        else:
-                            meme_burstiness[meme] = {current_interval : burstiness}
+                        burstiness = 0                        
+
+                    if meme_burstiness.has_key(meme):
+                        meme_burstiness[meme][current_interval] = burstiness
+                    else:
+                        meme_burstiness[meme] = {current_interval : burstiness}
 
     print 'Writing file...'  
     json.dump(meme_burstiness, open('./' + DATA + '/meme_burstiness.json', 'w'), indent=2)                           
