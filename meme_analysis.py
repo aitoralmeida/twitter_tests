@@ -14,12 +14,13 @@ import pandas as pd
 import networkx as nx
 from sentiment_analysis_textblob import get_tweet_polarity
 import time
+import math
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
 FILTER_QUANTILE = 0.99 # we only use the 1% most relevant memes
-INTERVAL = 600 # 10 mins
+PROCESSED_INTERVAL = 600 # 10 mins
 
 def count_meme_appearances(): 
     # Counts how many times a meme appears and which are the injection points
@@ -54,7 +55,7 @@ def count_meme_appearances():
                 if i == 0:
                     start_epoch = epoch
                 
-                if (epoch - start_epoch) >= 600:
+                if (epoch - start_epoch) >= PROCESSED_INTERVAL:
                     start_epoch = epoch
                 
                 is_retweet = False            
@@ -462,6 +463,49 @@ def get_meme_polarity():
     print 'Writing file...'                    
     json.dump(polarities, open('./' + DATA + '/meme_polarity.json', 'w'), indent=2)      
     json.dump(polarization, open('./' + DATA + '/meme_user_polarization.json', 'w'), indent=2)      
+    
+def calculate_burstiness():
+    print 'Identifiying breaking memes...'
+    meme_intervals = json.load(open('./' + DATA + '/meme_intervals.json', 'r'))
+    total_memes = len(meme_intervals)
+    meme_burstiness = {} # {'meme' : 0.54}
+    for j, meme in enumerate(meme_intervals):        
+        if j % 1000 == 0:
+            print 'Processing %i of %i memes' % (j, total_memes)
+            
+        values = meme_intervals[meme]
+        intervals = sorted([float(i) for i in values])
+        if len(intervals) > 1: # can't detect burstiness with only 1 interval
+            for i, current_interval in enumerate(intervals):
+                if i > 0: # no burstiness for the first interval
+                    previous_interval = intervals[i - 1]
+                    
+                    current_tweets = values[str(current_interval)]['tweet'] 
+                    current_retweets = values[str(current_interval)]['retweet']  
+                    previous_tweets = values[str(previous_interval)]['tweet'] 
+                    previous_retweets = values[str(previous_interval)]['retweet']                    
+                    tweet_difference = abs(current_tweets - previous_tweets) * 1.0  
+                    retweet_difference = abs(current_retweets - previous_retweets) * 1.0  
+                    try:
+                        burstiness = 1 - ( tweet_difference / math.sqrt(tweet_difference ** 2 + retweet_difference**2) )
+                        if burstiness > 1:
+                            print tweet_difference
+                            print retweet_difference
+                    except ZeroDivisionError:
+                        burstiness = 0
+                        
+                    if burstiness > 0:
+                        if meme_burstiness.has_key(meme):
+                            meme_burstiness[meme][current_interval] = burstiness
+                        else:
+                            meme_burstiness[meme] = {current_interval : burstiness}
+
+    print 'Writing file...'  
+    json.dump(meme_burstiness, open('./' + DATA + '/meme_burstiness.json', 'w'), indent=2)                           
+                    
+                    
+            
+    
 
     
 if __name__=='__main__':  
@@ -473,6 +517,7 @@ if __name__=='__main__':
 #    build_viral_network()
 #    build_influence_network()
 #    calculate_influence_passivity()
-    get_meme_polarity()
+#    get_meme_polarity()
+    calculate_burstiness()
     
     print 'DONE'
