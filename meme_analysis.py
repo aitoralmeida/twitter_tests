@@ -29,6 +29,7 @@ def count_meme_appearances():
     total_urls = 0
     meme_days = {} #{'meme' : {'month' : {'day' : {'id' : 14, 'id2' : 1}}}
     meme_intervals = {} # {'meme': {'epoch' : {'tweet' : 12, 'retweet' : 23}}}
+    epoch_acum = {} # {'epoch' : 12}
     url_count = {} # {'id': 24}
     retweet_count = {} # only those retweets with URLs {id_from : {id_to : 13}}
     start_epoch = 0
@@ -88,6 +89,12 @@ def count_meme_appearances():
                             total_tags += 1
                             _add_meme_interval(meme_intervals, tag, start_epoch, is_retweet)
                             
+                            if epoch_acum.has_key(epoch):
+                                epoch_acum[epoch] += 1
+                            else:
+                                epoch_acum[epoch] = 1
+                                
+                            
                             
                 except:
                     pass
@@ -104,15 +111,24 @@ def count_meme_appearances():
                         _add_meme_days(meme_days, url, month, day, user_id, from_id) 
                         total_urls += 1
                         _add_meme_interval(meme_intervals, url, start_epoch, is_retweet)
+                        if epoch_acum.has_key(epoch):
+                            epoch_acum[epoch] += 1
+                        else:
+                            epoch_acum[epoch] = 1
                 except:
                     pass
+                
     print 'Total tags: %s' % (total_tags)
-    print 'Total URLs: %s' % (total_urls)
+    print 'Total URLs: %s' % (total_urls)      
     print 'Writing file...'                    
     json.dump(meme_days, open('./' + DATA + '/meme_count.json', 'w'), indent=2)
     json.dump(meme_intervals, open('./' + DATA + '/meme_intervals.json', 'w'), indent=2)
+    json.dump(epoch_acum, open('./' + DATA + '/intervals_accum.json', 'w'), indent=2)
     json.dump(url_count, open('./' + DATA + '/url_count.json', 'w'), indent=2)
     json.dump(retweet_count, open('./' + DATA + '/retweet_count.json', 'w'), indent=2)
+    
+       
+    
     
 def count_meme_id_diversity():
     # calculates the diversity of each meme, both per day and global.
@@ -510,13 +526,13 @@ def calculate_burstiness():
 if __name__=='__main__':  
     print 'Starting...'
     
-#    count_meme_appearances()
+    count_meme_appearances()
 #    count_meme_id_diversity()
 #    filter_relevant_memes()
 #    build_viral_network()
 #    build_influence_network()
 #    calculate_influence_passivity()
 #    get_meme_polarity()
-    calculate_burstiness()
+#    calculate_burstiness()
     
     print 'DONE'
