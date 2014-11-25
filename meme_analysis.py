@@ -494,13 +494,21 @@ def calculate_burstiness():
         for i, interval in enumerate(values):
             if i == 0:
                 continue
-            meme_ocurrences_interval = values[interval]['tweet'] + values[interval]['retweet']
-            total_ocurrences_interval = epoch_acum[interval]
+            meme_ocurrences_interval = values[interval]['tweet'] + values[interval]['retweet'] * 1.0
+            total_ocurrences_interval = epoch_acum[interval] * 1.0
             meme_ocurrences_until = sum([values[inter]['tweet'] + values[inter]['retweet'] 
-                                                    for inter in values if inter <= interval])
-            total_ocurrences_until = [epoch_acum[epoch] for epoch in epoch_acum if epoch <= interval]
+                                                    for inter in values if inter <= interval]) * 1.0
+            total_ocurrences_until = sum([epoch_acum[epoch] for epoch in epoch_acum if epoch <= interval]) * 1.0
+            try:
+                burstiness = (meme_ocurrences_interval / total_ocurrences_interval) / (meme_ocurrences_until / total_ocurrences_until)
+            except:
+                print meme
+                print meme_ocurrences_interval
+                print total_ocurrences_interval
+                print meme_ocurrences_until
+                print total_ocurrences_until
+                
             
-            burstiness = (meme_ocurrences_interval / total_ocurrences_interval) / (meme_ocurrences_until / total_ocurrences_until)
             if meme_burstiness.has_key(meme):
                 meme_burstiness[meme][interval] = burstiness
             else:
@@ -517,13 +525,13 @@ def calculate_burstiness():
 if __name__=='__main__':  
     print 'Starting...'
     
-    count_meme_appearances()
+#    count_meme_appearances()
 #    count_meme_id_diversity()
 #    filter_relevant_memes()
 #    build_viral_network()
 #    build_influence_network()
 #    calculate_influence_passivity()
 #    get_meme_polarity()
-#    calculate_burstiness()
+    calculate_burstiness()
     
     print 'DONE'
