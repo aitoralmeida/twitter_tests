@@ -10,17 +10,15 @@ We consider both tags and urls as memes
 from glob import glob
 import json
 import gzip
-import pandas as pd
 import networkx as nx
 from sentiment_analysis_textblob import get_tweet_polarity
 import time
-import math
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
 FILTER_QUANTILE = 0.99 # we only use the 1% most relevant memes
-PROCESSED_INTERVAL = 600 # 10 mins
+PROCESSED_INTERVAL = 3600 # 1 hour
 
 def count_meme_appearances(): 
     # Counts how many times a meme appears and which are the injection points
@@ -89,10 +87,10 @@ def count_meme_appearances():
                             total_tags += 1
                             _add_meme_interval(meme_intervals, tag, start_epoch, is_retweet)
                             
-                            if epoch_acum.has_key(epoch):
-                                epoch_acum[epoch] += 1
+                            if epoch_acum.has_key(start_epoch):
+                                epoch_acum[start_epoch] += 1
                             else:
-                                epoch_acum[epoch] = 1
+                                epoch_acum[start_epoch] = 1
                                 
                             
                             
@@ -111,10 +109,10 @@ def count_meme_appearances():
                         _add_meme_days(meme_days, url, month, day, user_id, from_id) 
                         total_urls += 1
                         _add_meme_interval(meme_intervals, url, start_epoch, is_retweet)
-                        if epoch_acum.has_key(epoch):
-                            epoch_acum[epoch] += 1
+                        if epoch_acum.has_key(start_epoch):
+                            epoch_acum[start_epoch] += 1
                         else:
-                            epoch_acum[epoch] = 1
+                            epoch_acum[start_epoch] = 1
                 except:
                     pass
                 
@@ -482,38 +480,31 @@ def get_meme_polarity():
     
 def calculate_burstiness():
     print 'Identifiying breaking memes...'
+    # {'meme': {'epoch' : {'tweet' : 12, 'retweet' : 23}}}
     meme_intervals = json.load(open('./' + DATA + '/meme_intervals.json', 'r'))
+    # {'epoch' : 12}
+    epoch_acum = json.load(open('./' + DATA + '/intervals_accum.json', 'r')) 
     total_memes = len(meme_intervals)
-    meme_burstiness = {} # {'meme' : 0.54}
+
+    meme_burstiness = {} # {'meme' : { 'epoch#' : 0.54}}
     for j, meme in enumerate(meme_intervals):        
         if j % 1000 == 0:
-            print 'Processing %i of %i memes' % (j, total_memes)
-            
+            print 'Processing %i of %i memes' % (j, total_memes)   
         values = meme_intervals[meme]
-        intervals = sorted([float(i) for i in values])
-        if len(intervals) > 1: # can't detect burstiness with only 1 interval
-            for i, current_interval in enumerate(intervals):
-                if i > 0: # no burstiness for the first interval
-                    previous_interval = intervals[i - 1]
-                    
-                    current_tweets = values[str(current_interval)]['tweet'] 
-                    current_retweets = values[str(current_interval)]['retweet']  
-                    previous_tweets = values[str(previous_interval)]['tweet'] 
-                    previous_retweets = values[str(previous_interval)]['retweet']                    
-                    tweet_difference = abs(current_tweets - previous_tweets) * 1.0  
-                    retweet_difference = abs(current_retweets - previous_retweets) * 1.0  
-                    try:
-                        burstiness = 1 - ( tweet_difference / math.sqrt(tweet_difference ** 2 + retweet_difference**2) )
-                        if burstiness > 1:
-                            print tweet_difference
-                            print retweet_difference
-                    except ZeroDivisionError:
-                        burstiness = 0                        
-
-                    if meme_burstiness.has_key(meme):
-                        meme_burstiness[meme][current_interval] = burstiness
-                    else:
-                        meme_burstiness[meme] = {current_interval : burstiness}
+        for i, interval in enumerate(values):
+            if i == 0:
+                continue
+            meme_ocurrences_interval = values[interval]['tweet'] + values[interval]['retweet']
+            total_ocurrences_interval = epoch_acum[interval]
+            meme_ocurrences_until = sum([values[inter]['tweet'] + values[inter]['retweet'] 
+                                                    for inter in values if inter <= interval])
+            total_ocurrences_until = [epoch_acum[epoch] for epoch in epoch_acum if epoch <= interval]
+            
+            burstiness = (meme_ocurrences_interval / total_ocurrences_interval) / (meme_ocurrences_until / total_ocurrences_until)
+            if meme_burstiness.has_key(meme):
+                meme_burstiness[meme][interval] = burstiness
+            else:
+                meme_burstiness[meme] = {interval : burstiness}
 
     print 'Writing file...'  
     json.dump(meme_burstiness, open('./' + DATA + '/meme_burstiness.json', 'w'), indent=2)                           
