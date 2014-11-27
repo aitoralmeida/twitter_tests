@@ -11,13 +11,14 @@ from glob import glob
 import json
 import gzip
 import networkx as nx
+import pandas as pd
 from sentiment_analysis_textblob import get_tweet_polarity
 import time
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
-FILTER_QUANTILE = 0.99 # we only use the 1% most relevant memes
+FILTER_QUANTILE = 0.999 # we only use the 0.1% most relevant memes
 PROCESSED_INTERVAL = 3600 # 1 hour
 
 def count_meme_appearances(): 
@@ -179,15 +180,14 @@ def _add_meme_days(meme_days, meme, month, day, user_id, from_id):
         meme_days[meme][month] = {day : {'total' : 1, user_id : {'total' : 1, 'from_id': list_to_add}}}
     elif not meme_days[meme][month].has_key(day):          
         meme_days[meme][month][day] = {'total' : 1, user_id : {'total' : 1, 'from_id': list_to_add}}
-    elif not meme_days[meme][month][day].has_key(user_id):
+    elif not meme_days[meme][month][day].has_key(user_id):        
         try:
             total = meme_days[meme][month][day]['total']
             total += 1
         except:
             total = 1  
         meme_days[meme][month][day]['total'] = total
-        meme_days[meme][month][day][user_id]['total'] = 1
-        meme_days[meme][month][day][user_id]['from_id'] = list_to_add
+        meme_days[meme][month][day][user_id] = {'total' : 1, 'from_id' : list_to_add}
 
     else:  
         meme_days[meme][month][day]['total'] += 1
@@ -196,6 +196,7 @@ def _add_meme_days(meme_days, meme, month, day, user_id, from_id):
             unique_ids = set(meme_days[meme][month][day][user_id]['from_id'])
             unique_ids.add(from_id)
             meme_days[meme][month][day][user_id]['from_id'] = list(unique_ids)
+            
             
 def _add_meme_interval(meme_intervals, meme, start_epoch, is_retweet):
     if meme_intervals.has_key(meme):
@@ -223,12 +224,12 @@ def filter_relevant_memes():
     meme_diversity = json.load(open('./' + DATA + '/meme_source_diversity.json', 'r'))
     
     # get the msg number for each meme
-#    msg_totals = [meme_diversity[meme]['total_msgs'] for meme in meme_diversity]
+    msg_totals = [meme_diversity[meme]['total_msgs'] for meme in meme_diversity]
     # calculate the minumun msg ammount necessary to be relevant. We do this taking
     # the higher 5%.
-#    totals = pd.Series(msg_totals)
-#    min_msgs = totals.quantile(FILTER_QUANTILE)
-    min_msgs = 21 * 3 #days captured X 3
+    totals = pd.Series(msg_totals)
+    min_msgs = totals.quantile(FILTER_QUANTILE)
+#    min_msgs = 21 * 3 #days captured X 3
     print 'Minimun messages to be relevant: %s' % (min_msgs)
     # get the relevant memes
     relevant_memes = [meme for meme in meme_diversity if meme_diversity[meme]['total_msgs'] >= min_msgs]
@@ -525,13 +526,13 @@ def calculate_burstiness():
 if __name__=='__main__':  
     print 'Starting...'
     
-#    count_meme_appearances()
-#    count_meme_id_diversity()
-#    filter_relevant_memes()
-#    build_viral_network()
-#    build_influence_network()
-#    calculate_influence_passivity()
-#    get_meme_polarity()
+    count_meme_appearances()
+    count_meme_id_diversity()
+    filter_relevant_memes()
+    build_viral_network()
+    build_influence_network()
+    calculate_influence_passivity()
+    get_meme_polarity()
     calculate_burstiness()
     
     print 'DONE'
