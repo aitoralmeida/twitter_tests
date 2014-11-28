@@ -15,14 +15,14 @@ import pandas as pd
 from sentiment_analysis_textblob import get_tweet_polarity
 import time
 
-CORPUS = 'corpus' #corpus, corpus_lite
+CORPUS = 'corpus_lite' #corpus, corpus_lite
 DATA = 'data' #data output folder
 SEED = ['p2', 'tcot', 'gov', 'dem', 'dems', 'gop']
 FILTER_QUANTILE = 0.999 # we only use the 0.1% most relevant memes
 PROCESSED_INTERVAL = 3600 # 1 hour
 
-def count_meme_appearances(): 
-    # Counts how many times a meme appears and which are the injection points
+# Counts how many times a meme appears and which are the injection points
+def count_meme_appearances():     
     print 'Counting meme appearances'    
     total_tags = 0
     total_urls = 0
@@ -125,10 +125,8 @@ def count_meme_appearances():
     json.dump(epoch_acum, open('./' + DATA + '/intervals_accum.json', 'w'), indent=2)
     json.dump(url_count, open('./' + DATA + '/url_count.json', 'w'), indent=2)
     json.dump(retweet_count, open('./' + DATA + '/retweet_count.json', 'w'), indent=2)
-    
-       
-    
-    
+
+# calculates the diversity of each meme    
 def count_meme_id_diversity():
     # calculates the diversity of each meme, both per day and global.
     print 'Calculating meme diversity'
@@ -216,7 +214,7 @@ def _add_meme_interval(meme_intervals, meme, start_epoch, is_retweet):
         else:
             meme_intervals[meme] = {start_epoch : {'tweet' : 1, 'retweet' : 0}}
 
-        
+# selects relevant meme based on the total ammount of ther appearances      
 def filter_relevant_memes():
     # filters relevant memes acording to the quantile specified in FILTER_QUANTILE
     print 'Filtering relevant memes'
@@ -242,12 +240,14 @@ def filter_relevant_memes():
     print ' - Writing file...' 
     json.dump(filtered_meme_diversity, open('./' + DATA + '/meme_source_diversity_filtered.json', 'w'), indent=2)
 
+# uses the data in meme_count to build the meme expansion network.
 def build_viral_network(filter_relevant = True):
     print 'Building viral network...'
     meme_count = json.load(open('./' + DATA + '/meme_count.json', 'r'))
     if filter_relevant:
         filtered_meme_diversity = json.load(open('./' + DATA + '/meme_source_diversity_filtered.json', 'r'))
         filtered_memes = [meme for meme in filtered_meme_diversity]
+        print 'Total relevant memes:', len(filtered_memes)
     G = nx.DiGraph()
     for i, meme in enumerate(meme_count):  
         if i % 2000 == 0:
@@ -267,7 +267,9 @@ def build_viral_network(filter_relevant = True):
                             
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/viral_memes.gexf','w'))
-    
+
+# Uses the method described in "Influence and passivity in social media" to 
+# build the influence network
 def build_influence_network(min_urls = 10):
     print 'Building influence network...'
     url_count = json.load(open('./' + DATA + '/url_count.json', 'r'))
@@ -306,7 +308,9 @@ def build_influence_network(min_urls = 10):
             
     print 'Writing file...'
     nx.write_gexf(G, open('./networks/influence_network.gexf','w'))
-    
+
+# Uses the method described in "Influence and passivity in social media" to 
+# calculate the passivity and influence of each account     
 def calculate_influence_passivity(m = 30):
     print 'Calculating influence and passivity...'
     G = nx.read_gexf('./networks/influence_network.gexf')
@@ -316,7 +320,9 @@ def calculate_influence_passivity(m = 30):
     
     print 'Writing file...'    
     nx.write_gexf(G, open('./networks/influence_passivity.gexf','w'))
-    
+
+# Uses the method described in "Influence and passivity in social media" to 
+# calculate the passivity and influence of each account  
 def _update_passivity_influence(G):
     #get the data necessary to calculate acceptance rate
     # how many urls id_to has accepted from id_from, how how many urls in total
@@ -417,7 +423,9 @@ def _update_passivity_influence(G):
         current_passivity = n[1]['passivity']
         normalized_passivity = (current_passivity * 1.0) / total_passivity
         G.node[n[0]]['passivity'] = normalized_passivity 
-        
+
+# uses http://textblob.readthedocs.org/en/dev/ to get the tweet polority. I don't 
+# trust it too much.        
 def get_meme_polarity():
     print 'Getting polarities...'
     polarities = {} #{'meme' : {'total' : 5, 'count' : 3, 'avg' : 5/3}}
@@ -478,7 +486,8 @@ def get_meme_polarity():
     print 'Writing file...'                    
     json.dump(polarities, open('./' + DATA + '/meme_polarity.json', 'w'), indent=2)      
     json.dump(polarization, open('./' + DATA + '/meme_user_polarization.json', 'w'), indent=2)      
-    
+
+# the method used to calculate the burstiness is taken from "The effects of query bursts on web search"    
 def calculate_burstiness():
     print 'Identifiying breaking memes...'
     # {'meme': {'epoch' : {'tweet' : 12, 'retweet' : 23}}}
@@ -517,22 +526,17 @@ def calculate_burstiness():
 
     print 'Writing file...'  
     json.dump(meme_burstiness, open('./' + DATA + '/meme_burstiness.json', 'w'), indent=2)                           
-                    
-                    
-            
-    
-
     
 if __name__=='__main__':  
     print 'Starting...'
     
-    count_meme_appearances()
-    count_meme_id_diversity()
-    filter_relevant_memes()
+#    count_meme_appearances()
+#    count_meme_id_diversity()
+#    filter_relevant_memes()
     build_viral_network()
-    build_influence_network()
-    calculate_influence_passivity()
-    get_meme_polarity()
-    calculate_burstiness()
+#    build_influence_network()
+#    calculate_influence_passivity()
+#    get_meme_polarity()
+#    calculate_burstiness()
     
     print 'DONE'
