@@ -9,8 +9,9 @@ import networkx as nx
 import gzip
 
 CORPUS = 'corpus' #corpus, corpus_lite
+DATA = 'data' #data output folder
 
-def build_networks(process_retweets = True):
+def build_basic_networks(process_retweets = True):
 # Builds the tweets, mentions and total networks.
     G_tot = nx.DiGraph()
     G_retweet = nx.DiGraph()
@@ -70,8 +71,58 @@ def _process_file(file_name, G_tot, G_retweet, G_mentions, process_retweets = Tr
             
             
      return G_tot, G_retweet, G_mentions
+     
+def build_coretweet_network():    
+    retweeted_accounts = {} #{user_id : {retweeted_id : 4}}
+    print 'Counting retweets...'
+    for i, file_name in enumerate(glob('./' + CORPUS + '/*.txt.gz')):
+        if i % 10 == 0:
+            print 'Processing %i of %i files' % (i, len(glob('./' + CORPUS + '/*.txt.gz')))
+        with gzip.open(file_name, 'r') as f:
+            for line in f:
+                try:
+                    tweet = json.loads(line)
+                except:
+                    print 'Badly formed json: ', file_name, line
+                    continue
+            
+            try:
+                user_id = tweet['user']['id_str']
+            except:
+                #is a delete
+                continue
+                
+            if tweet.has_key('retweeted_status'):     
+                retweeted_id = tweet['retweeted_status']['user']['id_str']
+                if retweeted_accounts.has_key(user_id):
+                    if retweeted_accounts[user_id].has_key(retweeted_id):
+                        retweeted_accounts[user_id][retweeted_id] += 1    
+                    else:
+                        retweeted_accounts[user_id][retweeted_id] = 1
+                else:
+                   retweeted_accounts[user_id] = {retweeted_id : 1} 
 
-def _add_edge(G, a, a_label, b, b_label):
+    json.dump(retweeted_accounts, open('./' + DATA + '/retweeted_accounts.json', 'w'), indent=2)
+            
+    print 'Building network...'
+    G_coretweet = nx.Graph()
+    for original_id in retweeted_accounts:
+        retweets = retweeted_accounts[original_id]
+        retweeted_ids = list(retweets)
+        if len(retweeted_ids) > 1:
+            print retweeted_ids         
+            for i in range(len(retweeted_ids)):
+                nodeA = retweeted_ids[i]
+                for j in range(len(retweeted_ids[i+1:])):
+                    nodeB = retweeted_ids[i+1+j]
+                    weight = retweets[nodeA] + retweets[nodeB]
+                    G_coretweet = _add_edge(G_coretweet, nodeA, str(nodeA), nodeB, str(nodeB), weight)
+                
+    return G_coretweet     
+    
+    
+
+def _add_edge(G, a, a_label, b, b_label, weight = 1):
 # Add an edge to the node, increments its weight if already exists
     if not G.has_node(a):
         G.add_node(a, label =  a_label)
@@ -81,12 +132,14 @@ def _add_edge(G, a, a_label, b, b_label):
         G.add_node(b, label =  b_label) 
         
     if G.has_edge(a, b):
-        new_weight = G.edge[a][b]['weight'] + 1
+        new_weight = G.edge[a][b]['weight'] + weight
         G.add_edge(a, b, weight = new_weight)
     else:
         G.add_edge(a, b, weight = 1)
     
     return G
+    
+
     
 def _clean_non_representative_edges(G):
 # removes non-representative edges, i.e. those that do not have a minimum weight
@@ -109,8 +162,10 @@ def clean_network(path):
     print 'Loading...'
     G = nx.read_gexf(path)    
 
-    print 'Cleaning...'
+    print 'Cleaning ', path
+    print 'Removing non representative edges...'
     G = _clean_non_representative_edges(G)
+    print 'Removing zero degree nodes...'
     G = _clean_zero_edge_nodes(G)
 
     print 'Writing...'
@@ -159,13 +214,16 @@ def clean_non_positioned(path):
     
 if __name__=='__main__':     
     print 'Building networks...'
-    G_tot, G_retweet, G_mentions = build_networks()
+    G_tot, G_retweet, G_mentions = build_basic_networks()
+    G_coretweet = build_coretweet_network()
     print 'Writing files...'
     nx.write_gexf(G_tot, open('./networks/total.gexf','w'))
     nx.write_gexf(G_retweet, open('./networks/retweets.gexf','w'))
     nx.write_gexf(G_mentions, open('./networks/mentions.gexf','w'))
+    nx.write_gexf(G_coretweet, open('./networks/co_retweets.gexf','w'))
     
-    networks = ['./networks/total.gexf', './networks/retweets.gexf','./networks/mentions.gexf']
+    
+    networks = ['./networks/total.gexf', './networks/retweets.gexf','./networks/mentions.gexf','./networks/co_retweets.gexf']
     for n in networks:
         print 'Processing:', n
         clean_network(n)
