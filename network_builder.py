@@ -7,6 +7,8 @@ import json
 from glob import glob
 import networkx as nx
 import gzip
+import community
+import numpy as np
 
 CORPUS = 'corpus' #corpus, corpus_lite
 DATA = 'data' #data output folder
@@ -208,27 +210,57 @@ def clean_non_positioned(path):
             
     print 'Writing...'
     nx.write_gexf(G, open(path.replace('.gexf', '_processed.gexf'),'w'))
+    
+def compute_network_polarization(G):
+    communities = community.best_partition(G)
+    different_communities = set([communities[c] for c in communities])
+    print different_communities
+    matrix = np.zeros((len(different_communities), len(different_communities)))
+    total_intergroup_edges = 0
+    for edge in G.edges():
+        communityA = communities[edge[0]]
+        communityB = communities[edge[1]]
+        if communityA != communityB:
+            matrix[communityA][communityB] += 1    
+            total_intergroup_edges += 1
+
+    total_edges = len(G.edges())
+    polarity_degree = 1 - (total_intergroup_edges * 1.0 / total_edges * 1.0 ) 
+    
+    print "Intergroup edges:", total_intergroup_edges
+    print "Total_edges:", total_edges      
+    print "Polarity degree:", polarity_degree
+    
+    return polarity_degree
+    
+        
+    
+    
         
 
     
     
 if __name__=='__main__':     
-    print 'Building networks...'
-    G_tot, G_retweet, G_mentions = build_basic_networks()
-    G_coretweet = build_coretweet_network()
-    print 'Writing files...'
-    nx.write_gexf(G_tot, open('./networks/total.gexf','w'))
-    nx.write_gexf(G_retweet, open('./networks/retweets.gexf','w'))
-    nx.write_gexf(G_mentions, open('./networks/mentions.gexf','w'))
-    nx.write_gexf(G_coretweet, open('./networks/co_retweets.gexf','w'))
+#    print 'Building networks...'
+#    G_tot, G_retweet, G_mentions = build_basic_networks()
+#    G_coretweet = build_coretweet_network()
+#    print 'Writing files...'
+#    nx.write_gexf(G_tot, open('./networks/total.gexf','w'))
+#    nx.write_gexf(G_retweet, open('./networks/retweets.gexf','w'))
+#    nx.write_gexf(G_mentions, open('./networks/mentions.gexf','w'))
+#    nx.write_gexf(G_coretweet, open('./networks/co_retweets.gexf','w'))
+#    
+#    
+#    networks = ['./networks/total.gexf', './networks/retweets.gexf','./networks/mentions.gexf','./networks/co_retweets.gexf']
+#    for n in networks:
+#        print 'Processing:', n
+#        clean_network(n)
+##        colorify_political_valence(n)
+##        clean_non_positioned(n)
+
+    G = nx.read_gexf('./networks/viral_memes.gexf')  
+    compute_network_polarization(G.to_undirected())
     
-    
-    networks = ['./networks/total.gexf', './networks/retweets.gexf','./networks/mentions.gexf','./networks/co_retweets.gexf']
-    for n in networks:
-        print 'Processing:', n
-        clean_network(n)
-#        colorify_political_valence(n)
-#        clean_non_positioned(n)
 
 
     print 'DONE'
