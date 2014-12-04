@@ -62,8 +62,8 @@ def update_relations(id_list):
     return all_relations
     
 def get_list_members(username, listname):
-    members = tweepy.Cursor(api.list_members, username, username).items()
-    member_accounts = [u.screen_name for u in members]
+    members_data = tweepy.Cursor(api.list_members, username, username).items()
+    member_accounts = [(u.screen_name, u.name) for u in members_data]
     return member_accounts
     
     
