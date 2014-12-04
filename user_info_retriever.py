@@ -57,3 +57,11 @@ def update_relations(id_list):
     
     return all_relations
     
+def get_list_members(username, listname):
+    members = tweepy.Cursor(api.list_members, username, username).items()
+    member_accounts = [u.screen_name for u in members]
+    return member_accounts
+    
+    
+print get_screen_name_from_id("91734908")
+    
