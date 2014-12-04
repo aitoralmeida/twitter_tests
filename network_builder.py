@@ -214,7 +214,6 @@ def clean_non_positioned(path):
 def compute_network_polarization(G):
     communities = community.best_partition(G)
     different_communities = set([communities[c] for c in communities])
-    print different_communities
     matrix = np.zeros((len(different_communities), len(different_communities)))
     total_intergroup_edges = 0
     for edge in G.edges():
