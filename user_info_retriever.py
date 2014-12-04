@@ -25,6 +25,10 @@ def get_id_from_screen_name(screen_name):
 def get_screen_name_from_id(id_str):
     user = api.get_user(id_str)
     return user.screen_name
+    
+def get_name(user):
+    name = api.get_user(user).name
+    return name
 
 def get_followers(id_str):
     user = api.get_user(id_str)
