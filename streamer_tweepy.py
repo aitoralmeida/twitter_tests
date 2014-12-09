@@ -34,6 +34,9 @@ initial_time = time.time()
 class StdOutListener(StreamListener):       
  
     def on_data(self, raw_data):
+        print "ON DATA"
+        print raw_data
+        sys.stdout.flush()
         global tweets, initial_time
         
         elapsed_time = time.time () - initial_time #elapsed secons

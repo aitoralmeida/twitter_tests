@@ -1,3 +1,5 @@
+import bz2
+import StringIO
 import sys
 import gzip
 import json
@@ -21,8 +23,14 @@ def push(self, filename):
         return
 
     try:
-        headers = {'content-type': 'application/json'}
-        r = requests.post(WEB_URL, data = json.dumps(contents), headers = headers, auth = (WEB_USER, WEB_PASSWORD)) # Already in JSON
+        contents_bz2 = StringIO.StringIO(bz2.compress(json.dumps(contents)))
+    except:
+        logger.error("Error compressing %s; retrying in 10 second..." % filename)
+        self.retry(countdown = 10)
+        return
+
+    try:
+        r = requests.post(WEB_URL, files = { 'tweets.bz2' : contents_bz2}, auth = (WEB_USER, WEB_PASSWORD)) # Already in JSON
     except requests.exceptions.RequestException as re:
         logger.error("requests error: %s" % re)
         self.retry(countdown = 5)
