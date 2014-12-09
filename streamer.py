@@ -3,6 +3,8 @@
 @author: aitor
 """
 
+import random
+import sys
 import gzip
 import twitter
 import woe_ids
@@ -10,11 +12,15 @@ import datetime
 import json
 import time
 
-
-CONSUMER_KEY = '7WVJjUFxjG07hT1boGuS167gJ'
-CONSUMER_SECRET ='faY2XRyV4zUO1ScI38T6PsXcVLutOzFgMcAi0VOabgvkq2fXtl'
-OAUTH_TOKEN = '2833997469-weiExfPXQ3Mscii21BD5kZHb1srghWzuuLaYLHa'
-OAUTH_TOKEN_SECRET = 'B4KYovQBMjnziTeSi1FrkYFOqeKsr4cm76aIrjoknXZUn'
+try:
+    from config import OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET
+except ImportError:
+    print "config.py not found. Run:"
+    print ""
+    print " $ cp config.py.dist config.py "
+    print ""
+    print "Edit the config.py file, and run this command again"
+    sys.exit(-1)
 
 auth = twitter.oauth.OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET,
                            CONSUMER_KEY, CONSUMER_SECRET)
@@ -135,7 +141,11 @@ if __name__=='__main__':
 #            pass
 
     # monitorize tweets, this continues for ever
-    monitorize_tweets(['#p2', '#tcot'])
+    # random.shuffle to avoid having the same exact query
+    # in all the servers always
+    query = ['#p2', '#tcot']
+    random.shuffle(query)
+    monitorize_tweets(query)
     
     print 'DONE'
 
