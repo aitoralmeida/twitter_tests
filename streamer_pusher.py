@@ -14,7 +14,7 @@ logger = get_task_logger(__name__)
 def push(self, filename):
     logger.info("Processing filename %s" % filename)
     try:
-        contents = gzip.open(filename).read()
+        contents = [ json.loads(line) for line in gzip.open(filename) ]
     except:
         logger.error("Error reading %s; retrying in 1 second..." % filename)
         self.retry(countdown = 1)
@@ -22,7 +22,7 @@ def push(self, filename):
 
     try:
         headers = {'content-type': 'application/json'}
-        r = requests.post(WEB_URL, data = contents, headers = headers, auth = (WEB_USER, WEB_PASSWORD)) # Already in JSON
+        r = requests.post(WEB_URL, data = json.dumps(contents), headers = headers, auth = (WEB_USER, WEB_PASSWORD)) # Already in JSON
     except requests.exceptions.RequestException as re:
         logger.error("requests error: %s" % re)
         self.retry(countdown = 5)
