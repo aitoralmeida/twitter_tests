@@ -5,6 +5,8 @@ Created on Tue Oct 28 15:08:20 2014
 @author: aitor
 """
 
+import sys
+import random
 import tweepy
 from tweepy import StreamListener, Stream
 import gzip
@@ -12,10 +14,15 @@ import time
 import datetime
 import json
 
-CONSUMER_KEY = '7WVJjUFxjG07hT1boGuS167gJ'
-CONSUMER_SECRET ='faY2XRyV4zUO1ScI38T6PsXcVLutOzFgMcAi0VOabgvkq2fXtl'
-OAUTH_TOKEN = '2833997469-weiExfPXQ3Mscii21BD5kZHb1srghWzuuLaYLHa'
-OAUTH_TOKEN_SECRET = 'B4KYovQBMjnziTeSi1FrkYFOqeKsr4cm76aIrjoknXZUn'
+try:
+    from config import OAUTH_TOKEN, OAUTH_TOKEN_SECRET, CONSUMER_KEY, CONSUMER_SECRET
+except ImportError:
+    print "config.py not found. Run:"
+    print ""
+    print " $ cp config.py.dist config.py "
+    print ""
+    print "Edit the config.py file, and run this command again"
+    sys.exit(-1)
 
 tweets = []
 initial_time = time.time()
@@ -67,7 +74,9 @@ if __name__ == '__main__':
     
     listener = StdOutListener()
     
+    query = ['#p2', '#tcot', '#gov', '#dem', '#dems', '#gop']
+    random.shuffle(query)
     stream = Stream(auth, listener)
-    stream.filter(track=['#p2', '#tcot', '#gov', '#dem', '#dems', '#gop'])
+    stream.filter(track=query)
 
     print 'Done'

@@ -1,3 +1,14 @@
+WEB_CREDENTIALS = {
+    'deusto:asdf8adsf123kdfas8' : 'deusto',
+    'uned:1kljsdf8341kdfadf1r8' : 'uned',
+}
+
+WEB_USER = 'deusto'
+WEB_PASSWORD = 'asdf8adsf123kdfas8'
+WEB_URL = 'http://localhost:5000/'
+
+MONGODB_PUSHES_URI = 'mongodb://twitter_tests:twitter_t3sts@apps.morelab.deusto.es:27019/twitter_tests'
+
 # Deusto
 CONSUMER_KEY = '7WVJjUFxjG07hT1boGuS167gJ'
 CONSUMER_SECRET ='faY2XRyV4zUO1ScI38T6PsXcVLutOzFgMcAi0VOabgvkq2fXtl'
