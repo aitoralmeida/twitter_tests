@@ -1,4 +1,5 @@
 import sys
+import gzip
 import json
 import requests
 from celery import Celery
@@ -13,7 +14,7 @@ logger = get_task_logger(__name__)
 def push(self, filename):
     logger.info("Processing filename %s" % filename)
     try:
-        contents = open(filename).read()
+        contents = gzip.open(filename).read()
     except:
         logger.error("Error reading %s; retrying in 1 second..." % filename)
         self.retry(countdown = 1)
