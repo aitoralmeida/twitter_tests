@@ -22,7 +22,10 @@ except ImportError:
     print " $ cp config.py.dist config.py "
     print ""
     print "Edit the config.py file, and run this command again"
+    sys.stdout.flush()
     sys.exit(-1)
+
+import streamer_pusher
 
 tweets = []
 initial_time = time.time()
@@ -39,10 +42,12 @@ class StdOutListener(StreamListener):
             now = datetime.datetime.now()
             file_name = './corpus_new/tweets-%s-%s-%s-%s-%s.txt.gz' % (now.month, now.day, now.hour, now.minute, now.second)
             print 'Writing file:', file_name
+            sys.stdout.flush()
             with gzip.open(file_name, 'w') as f:
                 for tweet in tweets:
                     f.write(json.dumps(tweet) + '\n')
-                    
+            
+            streamer_pusher.push.delay(file_name)
             tweets = []
             initial_time = time.time()
         
@@ -52,23 +57,27 @@ class StdOutListener(StreamListener):
         except:
             now = datetime.datetime.now()
             print '(%s %s:%s)Invalid json data: %s' % (now.day, now.hour, now.minute, raw_data)
+            sys.stdout.flush()
              
         return True
  
     def on_error(self, status_code):
         now = datetime.datetime.now()
         print '(%s %s:%s)Got an error with status code: %s' % (now.day, now.hour, now.minute, status_code)
+        sys.stdout.flush()
         #sleep 5 mins if an error occurs
         time.sleep(5 * 60)
         return True # To continue listening
  
     def on_timeout(self):
         print 'Timeout...' 
+        sys.stdout.flush()
         return True # To continue listening
         
  
 if __name__ == '__main__':
     print 'Starting...'
+    sys.stdout.flush()
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
     
@@ -80,3 +89,4 @@ if __name__ == '__main__':
     stream.filter(track=query)
 
     print 'Done'
+    sys.stdout.flush()
