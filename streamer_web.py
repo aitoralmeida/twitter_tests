@@ -1,4 +1,5 @@
 import json
+import bz2
 from flask import Flask, request
 from pymongo import MongoClient
 
@@ -25,7 +26,21 @@ def index():
     if user is None:
         return error("Invalid credentials")
 
-    raw_tweets = request.json
+    try:
+        tweet_contents_bz2 = request.files['tweets.bz2'].read()
+    except Exception as e:
+        return error("Error reading file tweets.bz2: %s" % e)
+
+    try:
+        tweet_contents = bz2.decompress(tweet_contents_bz2)
+    except Exception as e:
+        return error("Error decompressing tweets.bz2: %s" % e)
+
+    try:
+        raw_tweets = json.loads(tweet_contents)
+    except Exception as e:
+        return error("Error deserializing tweets: %s" % e)
+
     for raw_tweet in raw_tweets:
         raw_tweet[u'origin_twitter_streamer'] = user
 
