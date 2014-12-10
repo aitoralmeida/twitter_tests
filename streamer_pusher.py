@@ -31,6 +31,7 @@ def push(self, filename):
 
     try:
         r = requests.post(WEB_URL, files = { 'tweets.bz2' : contents_bz2}, auth = (WEB_USER, WEB_PASSWORD)) # Already in JSON
+        logger.info(r.text)
     except requests.exceptions.RequestException as re:
         logger.error("requests error: %s" % re)
         self.retry(countdown = 5)
